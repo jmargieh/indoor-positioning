@@ -1,0 +1,82 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "marker-ih97mcjf0",
+                "title": "point_1",
+                "description": "",
+                "marker-size": "medium",
+                "marker-color": "#1087bf",
+                "marker-symbol": ""
+            },
+            "geometry": {
+                "coordinates": [
+                    -24.433593,
+                    28.149503
+                ],
+                "type": "Point"
+            },
+            "id": "8dc5439287623c0ba161b5dc6367d947"
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "marker-ih983w6m1",
+                "title": "point_2",
+                "description": "",
+                "marker-size": "medium",
+                "marker-color": "#1087bf",
+                "marker-symbol": ""
+            },
+            "geometry": {
+                "coordinates": [
+                    5.976562,
+                    -40.757536
+                ],
+                "type": "Point"
+            },
+            "id": "9fd4bc8deea3b6d2e464abd61aeee801"
+        },
+                {
+            "type": "Feature",
+            "properties": {
+                "id": "marker-ih985is73",
+                "title": "point_4",
+                "description": "",
+                "marker-size": "medium",
+                "marker-color": "#1087bf",
+                "marker-symbol": ""
+            },
+            "geometry": {
+                "coordinates": [
+                    -85.429687,
+                    -18.683528
+                ],
+                "type": "Point"
+            },
+            "id": "173ff3c4f07619351de517bc0f9a54a4"
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "marker-ih984sb52",
+                "title": "point_3",
+                "description": "",
+                "marker-size": "medium",
+                "marker-color": "#1087bf",
+                "marker-symbol": ""
+            },
+            "geometry": {
+                "coordinates": [
+                    62.03125,
+                    -2.21118
+                ],
+                "type": "Point"
+            },
+            "id": "5b6e7b974301ba2aca2c2dfa1f98e286"
+        }
+    ],
+    "id": "jmargieh.o7j6b3ej"
+}
