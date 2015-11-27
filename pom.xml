@@ -64,6 +64,13 @@
 			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
+		<!--  
+		<dependency>
+			<groupId>com.vividsolutions</groupId>
+			<artifactId>jts</artifactId>
+			<version>1.13</version>
+		</dependency>
+		 -->
 		<dependency>
 			<groupId>com.vividsolutions</groupId>
 			<artifactId>jts</artifactId>
@@ -79,7 +86,11 @@
 			<artifactId>gt-swing</artifactId>
 			<version>${geotools.version}</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-geojson</artifactId>
+			<version>${geotools.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-frontend-jaxrs</artifactId>
