@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+
+import main.java.com.indoor.helpers.CustomComparator;
 
 import org.geotools.feature.FeatureIterator;
 import org.geotools.geojson.GeoJSONUtil;
@@ -101,12 +104,8 @@ public class IndoorWebService {
 			}
 		}
 		
-		//for (int i = 0; i < this.pointsArray.size(); i++) {
-		//	System.out.println(this.pointsArray.get(i).getAttribute("title"));
-		//}
-
-		//Geometry circleTest = createCircle((Geometry)this.pointsArray.get(0).getAttribute("geometry"), 5.0);
-
+		putPointsIntoDeviceHashMap();
+		
 		return Response.status(200).entity("If reached here we succeed!").build();
 
 	}
@@ -116,18 +115,25 @@ public class IndoorWebService {
 		
 		for (Iterator<SimpleFeature> pIterator = this.pointsArray.iterator(); pIterator.hasNext();) {
 			SimpleFeature simplefeature = pIterator.next();
-			if( this.deviceMap.containsKey(simplefeature.getAttribute("id")) == false ) {
+			if( this.deviceMap.containsKey(simplefeature.getID()) == false ) {
 				List<SimpleFeature> deviceArray = new ArrayList<>();
 				deviceArray.add(simplefeature);
-				this.deviceMap.put(simplefeature.getAttribute("id").toString(), deviceArray);
+				this.deviceMap.put(simplefeature.getID(), deviceArray);
 			}else {
-				this.deviceMap.get(simplefeature.getAttribute("id")).add(simplefeature);
+				this.deviceMap.get(simplefeature.getID()).add(simplefeature);
 			}
 		}
-		
-		
-		
+		sortDeviceHashMapListByTimeStamp();
 	}
+	
+	
+	private void sortDeviceHashMapListByTimeStamp() {
+		
+		for (List<SimpleFeature> value : this.deviceMap.values()) {
+		    Collections.sort(value,new CustomComparator());
+		}
+	}
+	
 	
 	// gets something like (Geometry)pIterator.next().getAttribute("geometry")) 
 	private double calculateDistance(Geometry p1, Geometry p2) {

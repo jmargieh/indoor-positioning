@@ -9,7 +9,8 @@
             "description":"dev_1",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 4
          },
          "geometry":{
             "coordinates":[
@@ -28,7 +29,8 @@
             "description":"point_4",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 4
          },
          "geometry":{
             "coordinates":[
@@ -37,7 +39,7 @@
             ],
             "type":"Point"
          },
-         "id":"386760ea3c843edcd7455364412e1579"
+         "id":"b16301c001df308468b98837edbc508a"
       },
       {
          "type":"Feature",
@@ -47,7 +49,8 @@
             "description":"dev_1",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 3
          },
          "geometry":{
             "coordinates":[
@@ -56,7 +59,7 @@
             ],
             "type":"Point"
          },
-         "id":"4a26f3de76624d52386aa31ff8453e72"
+         "id":"25e1b8b43157c902fcd3ffaa63b0ad24"
       },
       {
          "type":"Feature",
@@ -66,7 +69,8 @@
             "description":"dev_2",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 3
          },
          "geometry":{
             "coordinates":[
@@ -75,7 +79,7 @@
             ],
             "type":"Point"
          },
-         "id":"54f6d697e3f6d23db48ce4a44096b6f8"
+         "id":"b16301c001df308468b98837edbc508a",
       },
       {
          "type":"Feature",
@@ -85,7 +89,8 @@
             "description":"dev_1",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 1
          },
          "geometry":{
             "coordinates":[
@@ -94,7 +99,7 @@
             ],
             "type":"Point"
          },
-         "id":"5fd918e9d6060aaaa4906d48e3412995"
+         "id":"25e1b8b43157c902fcd3ffaa63b0ad24"
       },
       {
          "type":"Feature",
@@ -104,7 +109,8 @@
             "description":"point_5",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 5
          },
          "geometry":{
             "coordinates":[
@@ -113,7 +119,7 @@
             ],
             "type":"Point"
          },
-         "id":"7dfa58a28672a579ce37f6fce8a32ab0"
+         "id":"b16301c001df308468b98837edbc508a"
       },
       {
          "type":"Feature",
@@ -123,7 +129,8 @@
             "description":"dev_2",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 2
          },
          "geometry":{
             "coordinates":[
@@ -132,7 +139,7 @@
             ],
             "type":"Point"
          },
-         "id":"87d1406c1e4a9087e197f10d43c1f3b3"
+         "id":"b16301c001df308468b98837edbc508a"
       },
       {
          "type":"Feature",
@@ -142,7 +149,8 @@
             "description":"dev_1",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 2
          },
          "geometry":{
             "coordinates":[
@@ -151,7 +159,7 @@
             ],
             "type":"Point"
          },
-         "id":"926ca4d84f620c750ce7672a46319d5e"
+         "id":"25e1b8b43157c902fcd3ffaa63b0ad24"
       },
       {
          "type":"Feature",
@@ -161,7 +169,8 @@
             "description":"dev_2",
             "marker-size":"",
             "marker-color":"",
-            "marker-symbol":""
+            "marker-symbol":"",
+            "timestamp": 1
          },
          "geometry":{
             "coordinates":[
