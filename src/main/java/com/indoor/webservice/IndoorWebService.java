@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -36,6 +37,8 @@ public class IndoorWebService {
 	private List<SimpleFeature> obstaclesArray = new ArrayList<>();
 	// points located on obstacles
 	private List<SimpleFeature> pointsInObstaclesArray = new ArrayList<>();
+	//
+	private HashMap<String, List<SimpleFeature>> deviceMap = new HashMap<String, List<SimpleFeature>>();
 	
 	//private ArrayList<? extends Geometry> pointsArray;
 	//private ArrayList<? extends Geometry> obstaclesArray;
@@ -90,7 +93,7 @@ public class IndoorWebService {
 				SimpleFeature simplefeature = pIterator.next();
 				if (obstacle.contains((Geometry)simplefeature.getAttribute("geometry"))) {
 					// remove the point from pointsArray
-					pIterator.remove();
+					//pIterator.remove();
 					// add the problematic point to pointsInObstaclesArray
 					pointsInObstaclesArray.add(simplefeature);
 				}
@@ -98,14 +101,32 @@ public class IndoorWebService {
 			}
 		}
 		
-		for (int i = 0; i < this.pointsArray.size(); i++) {
-			System.out.println(this.pointsArray.get(i).getAttribute("title"));
-		}
+		//for (int i = 0; i < this.pointsArray.size(); i++) {
+		//	System.out.println(this.pointsArray.get(i).getAttribute("title"));
+		//}
 
 		//Geometry circleTest = createCircle((Geometry)this.pointsArray.get(0).getAttribute("geometry"), 5.0);
 
 		return Response.status(200).entity("If reached here we succeed!").build();
 
+	}
+	
+	
+	private void putPointsIntoDeviceHashMap() {
+		
+		for (Iterator<SimpleFeature> pIterator = this.pointsArray.iterator(); pIterator.hasNext();) {
+			SimpleFeature simplefeature = pIterator.next();
+			if( this.deviceMap.containsKey(simplefeature.getAttribute("id")) == false ) {
+				List<SimpleFeature> deviceArray = new ArrayList<>();
+				deviceArray.add(simplefeature);
+				this.deviceMap.put(simplefeature.getAttribute("id").toString(), deviceArray);
+			}else {
+				this.deviceMap.get(simplefeature.getAttribute("id")).add(simplefeature);
+			}
+		}
+		
+		
+		
 	}
 	
 	// gets something like (Geometry)pIterator.next().getAttribute("geometry")) 
