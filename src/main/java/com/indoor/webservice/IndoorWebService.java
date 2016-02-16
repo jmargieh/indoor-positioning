@@ -40,8 +40,10 @@ public class IndoorWebService {
 	private List<SimpleFeature> obstaclesArray = new ArrayList<>();
 	// points located on obstacles
 	private List<SimpleFeature> pointsInObstaclesArray = new ArrayList<>();
-	//
+	// HashMap with key:deviceid & SimpleFeature points List sorted by timestamp.
 	private HashMap<String, List<SimpleFeature>> deviceMap = new HashMap<String, List<SimpleFeature>>();
+	// HashMap with key:deviceid & LineString: the device path
+	private HashMap<String, LineString> devicePathMap = new HashMap<String, LineString>();
 	
 	//private ArrayList<? extends Geometry> pointsArray;
 	//private ArrayList<? extends Geometry> obstaclesArray;
@@ -105,8 +107,22 @@ public class IndoorWebService {
 		}
 		
 		putPointsIntoDeviceHashMap();
+		createDevicesPaths();
 		
-		return Response.status(200).entity("If reached here we succeed!").build();
+		
+		String Res="";
+		for (LineString line : this.devicePathMap.values()) {
+		    boolean flag = isPathCrossingObstacle(line);
+		    if(flag){
+		    	Res += "true | ";
+		    }else{
+		    	Res += "false |";
+		    }
+		    
+		}
+		
+		
+		return Response.status(200).entity(Res + "   -----If reached here we succeed!").build();
 
 	}
 	
@@ -129,8 +145,8 @@ public class IndoorWebService {
 	
 	private void sortDeviceHashMapListByTimeStamp() {
 		
-		for (List<SimpleFeature> value : this.deviceMap.values()) {
-		    Collections.sort(value,new CustomComparator());
+		for (List<SimpleFeature> list : this.deviceMap.values()) {
+		    Collections.sort(list,new CustomComparator());
 		}
 	}
 	
@@ -153,20 +169,36 @@ public class IndoorWebService {
 	}
 	
 	// TODO : construct a lineString from given set of points
-	private Geometry createLineString() {
+	private void createDevicesPaths() {
 		
+		int counter = 0;
 		GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-		Coordinate[] coords  = new Coordinate[] {new Coordinate(0, 2), new Coordinate(2, 0), new Coordinate(8, 6) };
-		LineString line = geometryFactory.createLineString(coords);
-		return line;
+		
+		for (List<SimpleFeature> list : this.deviceMap.values()) {
+			Coordinate[] coords  = new Coordinate[list.size()];
+			for (Iterator<SimpleFeature> pIterator = list.iterator(); pIterator.hasNext();) {
+				Geometry g = (Geometry)pIterator.next().getAttribute("geometry");
+				double xCoordinate = g.getCoordinate().x;
+				double yCoordinate = g.getCoordinate().y;
+				coords[counter++] = new Coordinate(xCoordinate, yCoordinate);
+			}
+			counter = 0;
+			LineString line = geometryFactory.createLineString(coords);
+			this.devicePathMap.put(list.get(0).getID(), line);
+		}
+		
 	}
 	
 	// checks if a path/Stringline is crossing an obstacle.
 	private boolean isPathCrossingObstacle(Geometry line) {
-		return true;
+		for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
+			Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
+			if(line.intersects(obstacle)){
+				return true;
+			}
+		}
+		return false;
 	}
 	
-	// TODO : will need a method that takes the array points and sort it by time
-	// TODO : will need an arrayList of array Lists, each cell will have an arrayList of the broadcasting device.
-
+	
 }
