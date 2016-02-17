@@ -14,10 +14,16 @@ import javax.ws.rs.core.Response;
 
 import main.java.com.indoor.helpers.CustomComparator;
 
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.geojson.GeoJSONUtil;
 import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.grid.Grids;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +36,13 @@ import com.vividsolutions.jts.util.GeometricShapeFactory;
 @Path("/")
 @Component("IndoorWebService")
 public class IndoorWebService {
+	
+	final double gridMinX1 = -417.0;
+	final double gridMaxX2 = 305.0;
+	final double gridMinY1 = -72.0;
+	final double gridMaxY2 = 82.0;
+	final double gridSize = 10.0;
+	
 	//points json file
 	private InputStream pointsInputStream = IndoorWebService.class.getResourceAsStream("/json/points.json");
 	//obstacles json file - generally polygons
@@ -108,6 +121,7 @@ public class IndoorWebService {
 		
 		putPointsIntoDeviceHashMap();
 		createDevicesPaths();
+		createGridMap();
 		
 		
 		String Res="";
@@ -193,12 +207,51 @@ public class IndoorWebService {
 	private boolean isPathCrossingObstacle(Geometry line) {
 		for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
 			Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
-			if(line.intersects(obstacle)){
+			if(line.crosses(obstacle)){
 				return true;
 			}
 		}
 		return false;
 	}
 	
+	// creates a Grid Map : Reference : http://docs.geotools.org/latest/userguide/extension/grid.html
+	// each feature is a polygon of size 10x10 
+	private void createGridMap() {
+		
+		try{
+			ReferencedEnvelope gridBounds = new ReferencedEnvelope(this.gridMinX1, this.gridMaxX2, this.gridMinY1, this.gridMaxY2, DefaultGeographicCRS.WGS84);
+			SimpleFeatureSource grid = Grids.createSquareGrid(gridBounds, gridSize);
+			SimpleFeatureCollection collection = grid.getFeatures();
+			
+			double matrixRows = Math.floor( (this.gridMaxY2  - this.gridMinY1)/this.gridSize );
+			double matrixCols = Math.floor( (this.gridMaxX2  - this.gridMinX1)/this.gridSize );
+			
+			if(matrixCols*matrixRows != collection.size()){
+				Exception e = new Exception("matrix Rows and cols don't fit with SimpleFeatureCollection collection Grid Size");
+				throw e;
+			}
+			
+			// if reached here that means everything is OK with the collection size and Matrix to be allocated is fine
+			SimpleFeature gridMapMatrix[][] = new SimpleFeature[(int)matrixCols][(int)matrixRows];
+			SimpleFeatureIterator iterator=collection.features();
+			try {
+				
+				for(int i=(int) (matrixRows-1) ; i>0 ; i++){
+					for(int j=0 ; j<(int) (matrixCols) && iterator.hasNext() ; j++){
+						SimpleFeature feature = iterator.next();
+						gridMapMatrix[i][j] = feature;
+					}
+				}
+			}
+			finally {
+				iterator.close();
+				}
+			}catch(IOException e){
+				System.err.println( e.getMessage() );
+			} catch (Exception e) {
+				System.err.println( e.getMessage() );
+			}
+		
+	}
 	
 }
