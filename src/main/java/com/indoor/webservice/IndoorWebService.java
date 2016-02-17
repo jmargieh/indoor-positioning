@@ -13,6 +13,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 
 import main.java.com.indoor.helpers.CustomComparator;
+import main.java.com.indoor.helpers.CustomLineString;
+import main.java.com.indoor.helpers.GridSquare;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -27,11 +29,14 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.springframework.stereotype.Component;
 
+import com.vividsolutions.jts.algorithm.CentroidPoint;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.util.GeometricShapeFactory;
+import com.vividsolutions.jts.geom.Point;
+
 
 @Path("/")
 @Component("IndoorWebService")
@@ -214,6 +219,15 @@ public class IndoorWebService {
 		return false;
 	}
 	
+	private Geometry createLineString(Point p1, Point p2){
+		GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
+		Coordinate[] coords = new Coordinate[] {new Coordinate(p1.getCoordinate().x, p1.getCoordinate().y), new Coordinate(p2.getCoordinate().x, p2.getCoordinate().y)};
+		LineString line = geometryFactory.createLineString(coords);
+		return line;
+	}
+	
+
+	
 	// creates a Grid Map : Reference : http://docs.geotools.org/latest/userguide/extension/grid.html
 	// each feature is a polygon of size 10x10 
 	private void createGridMap() {
@@ -232,24 +246,67 @@ public class IndoorWebService {
 			}
 			
 			// if reached here that means everything is OK with the collection size and Matrix to be allocated is fine
-			SimpleFeature gridMapMatrix[][] = new SimpleFeature[(int)matrixCols][(int)matrixRows];
+			GridSquare gridMapMatrix[][] = new GridSquare[(int)matrixRows][(int)matrixCols];
 			SimpleFeatureIterator iterator=collection.features();
 			try {
 				
-				for(int i=(int) (matrixRows-1) ; i>0 ; i++){
+				for(int i=(int) (matrixRows-1) ; i>=0 ; i--){
 					for(int j=0 ; j<(int) (matrixCols) && iterator.hasNext() ; j++){
 						SimpleFeature feature = iterator.next();
-						gridMapMatrix[i][j] = feature;
+						gridMapMatrix[i][j] = new GridSquare(Integer.toString(i)+"-"+Integer.toString(j), feature,0);
 					}
 				}
-			}
-			finally {
+			}finally {
 				iterator.close();
 				}
+			
+				for(int i=(int) (matrixRows-1) ; i>=0 ; i--){
+					for(int j=0 ; j<(int) (matrixCols) ; j++){
+						
+						Geometry g = (Geometry)gridMapMatrix[i][j].getSquare().getAttribute("element");
+						Point centroidPoint = g.getCentroid();
+						Geometry line = null;
+						
+						if(j > 0) // if not most left column then compute lineString to left
+						{
+							Geometry gLeft = (Geometry)gridMapMatrix[i][j-1].getSquare().getAttribute("element");
+							Point centroidPointLeft = gLeft.getCentroid();
+							line = createLineString(centroidPoint, centroidPointLeft);
+							gridMapMatrix[i][j].addLineString(new CustomLineString(line, 0));
+						}
+						if(j < (int) (matrixCols - 1)) // if not most right column then compute lineString to right
+						{
+							Geometry gRight = (Geometry)gridMapMatrix[i][j+1].getSquare().getAttribute("element");
+							Point centroidPointRight = gRight.getCentroid();
+							line = createLineString(centroidPoint, centroidPointRight);
+							gridMapMatrix[i][j].addLineString(new CustomLineString(line, 0));
+							
+						}
+						
+						if(i > 0) // if not most upper row
+						{
+							Geometry gUp = (Geometry)gridMapMatrix[i-1][j].getSquare().getAttribute("element");
+							Point centroidPointUp = gUp.getCentroid();
+							line = createLineString(centroidPoint, centroidPointUp);
+							gridMapMatrix[i][j].addLineString(new CustomLineString(line, 0));
+						}
+						if(i < (int)(matrixRows - 1)) // if not last row
+						{
+							Geometry gDown = (Geometry)gridMapMatrix[i+1][j].getSquare().getAttribute("element");
+							Point centroidPointDown = gDown.getCentroid();
+							line = createLineString(centroidPoint, centroidPointDown);
+							gridMapMatrix[i][j].addLineString(new CustomLineString(line, 0));
+						}
+						
+						
+						//GridSquare[i][j] = feature; // to be modified add new(..,..,..,..);
+					}
+				}
+			
 			}catch(IOException e){
-				System.err.println( e.getMessage() );
+				System.err.println("error IO:" + e.getMessage() );
 			} catch (Exception e) {
-				System.err.println( e.getMessage() );
+				System.err.println("error Exception:" + e.getMessage() );
 			}
 		
 	}
