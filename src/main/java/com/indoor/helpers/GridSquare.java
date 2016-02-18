@@ -45,6 +45,10 @@ public class GridSquare {
 		return this.customLineStringArray;
 	}
 	
+	public void setLineStringArray(List<CustomLineString> list){
+		this.customLineStringArray = list;
+	}
+	
 	public void addLineString(CustomLineString line){
 		this.customLineStringArray.add(line);
 	}
