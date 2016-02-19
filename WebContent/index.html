@@ -1,10 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
+<meta charset=utf-8 />
+<title>A simple map</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.css' rel='stylesheet' />
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+</style>
 </head>
-<body>
+  <body>
+<div id='map'></div>
 
-</body>
+<script>
+L.mapbox.accessToken = 'pk.eyJ1Ijoiam1hcmdpZWgiLCJhIjoiY2loOTdjdW9tMDA0aHZubTMzZ3V6dGY5ZyJ9.o38NX6nKo20UvCqEyEWrSw';
+
+var map = L.mapbox.map('map').setView([24.847, -47.813], 1);
+
+var featureLayerSpace = L.mapbox.featureLayer()
+.loadURL('json/space.json')
+.addTo(map);
+
+var featureLayerObstacles = L.mapbox.featureLayer()
+.loadURL('json/obstacles.json')
+.addTo(map);
+
+var featureLayerPoints = L.mapbox.featureLayer()
+.loadURL('json/points.json')
+.addTo(map);
+
+
+map.scrollWheelZoom.disable();
+</script>
+
+  </body>
 </html>
