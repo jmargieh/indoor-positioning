@@ -63,7 +63,19 @@ public class FileUploadServlet extends HttpServlet {
 		
 		 // 1. Get f from URL upload?f="?"
 		 String value = request.getParameter("f");
+		 String getfiles = request.getParameter("getfiles");
 		 
+		 if(getfiles != null && getfiles.compareTo("true") == 0){
+			// 2. Set response type to json
+				response.setContentType("application/json");
+				
+				// 3. Convert List<FileMeta> into JSON format
+		    	ObjectMapper mapper = new ObjectMapper();
+		    	
+		    	// 4. Send result to client
+		    	mapper.writeValue(response.getOutputStream(), files);
+		 }
+		 else {
 		 // 2. Get the file of index "f" from the list "files"
 		 FileMeta getFile = files.get(Integer.parseInt(value));
 		 
@@ -88,6 +100,6 @@ public class FileUploadServlet extends HttpServlet {
 		 }catch (IOException e) {
 				e.printStackTrace();
 		 }
-		
+		 }
 	}
 }

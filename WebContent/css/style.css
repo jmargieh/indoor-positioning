@@ -13,7 +13,7 @@ html, body {
 }
 #content{
   margin-top:80px;
-  color:white;
+  color: rgb(115, 115, 115);;
 }
 
 .navbar-inner li{

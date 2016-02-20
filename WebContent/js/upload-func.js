@@ -36,5 +36,27 @@ $(function () {
         var twitter = $('#twitter');
         data.formData = {twitter: twitter.val()};        
     });
+    
+    $.ajax({
+        url: "../indoor-positioning/upload?getfiles=true",
+        type: 'GET',
+        contentType: "json"
+    	})
+    	.done(function (data) {
+    		$("tr:has(td)").remove();
+            $.each(data, function (index, file) {
+            	
+            	
+                $("#uploaded-files").append(
+                		$('<tr/>')
+                		.append($('<td/>').text(file.fileName))
+                		.append($('<td/>').text(file.fileSize))
+                		.append($('<td/>').text(file.fileType))
+                		.append($('<td/>').html("<a href='upload?f="+index+"'>Click</a>"))
+                		.append($('<td/>').text("@"+file.twitter))
+
+                		)//end $("#uploaded-files").append()
+            }); 
+    	 });
    
 });

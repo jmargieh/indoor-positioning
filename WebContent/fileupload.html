@@ -2,22 +2,22 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>jQuery File Upload Example</title>
+<title>File Upload</title>
 <script src="js/jquery.1.9.1.min.js"></script>
 
 <script src="js/vendor/jquery.ui.widget.js"></script>
 <script src="js/jquery.iframe-transport.js"></script>
 <script src="js/jquery.fileupload.js"></script>
 
-<!-- bootstrap just to have good looking page -->
-<script src="bootstrap/js/bootstrap.min.js"></script>
-<link href="bootstrap/css/bootstrap.css" type="text/css" rel="stylesheet" />
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
+<link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+<link href="css/style.css" rel="stylesheet">
 
-<!-- we code these -->
+
 <link href="css/dropzone.css" type="text/css" rel="stylesheet" />
 <script src="js/upload-func.js"></script>
 
-<!-- header style ignore it -->
 <link href="css/mystyle.css" rel="stylesheet">
 <link href="css/fileupload-style.css" rel="stylesheet">
 
@@ -25,8 +25,47 @@
 
 <body>
 
-	<h1 style="text-align:center">Servlet jQuery File Upload<br></h1> 
-	
+<div class='navbar navbar-fixed-top'>
+  <nav class='navbar-inner header'>
+    <div class='container'>
+      <div class='brand'>
+        INDOOR-POS <i class="fa fa-cloud" style="text-shadow: 1px 1px white, -1px -1px #666;"></i>
+      </div>
+      <ul class='nav pull-right'>
+        <li>
+          <a href="index.html" class='nav-link'>
+            HOME
+          </a>
+        </li>
+        <li>
+          <a href="fileupload.html" class='nav-link'>UPLOAD</a>
+        </li>
+        <li>
+          <a class='nav-link'>ANOTHER</a>
+        </li>
+        <li class='dropdown'>
+          <a class='dropdown-toggle nav-link' data-toggle='dropdown'>DROP
+            <ul class='dropdown-menu text-center'>
+              <li>
+                <a href="#">Example 1</a>
+              </li>
+              <li>
+                <a href="#">Example 2</a>
+              </li>
+              <li>
+                <a href="#">Example 3</a>
+              </li>
+            </ul>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</div>
+<div id='content'>
+  <div class='row-fluid'>
+    <div class='span12'>
+
 	<!-- user twitter -->
 	<div id="user_twitter">
 	<span>Your Twitter</span>
@@ -35,7 +74,7 @@
 			<input class="span2" id="twitter" name="twitter" type="text" placeholder="Username">
 		</div>
 	</div>
-<div style="width:700px;padding:20px;S">
+<div style="max-width:700px; padding:20px;S">
 
 	<input id="fileupload" type="file" name="files[]" data-url="upload" multiple>
 	
@@ -56,5 +95,10 @@
 		</tr>
 	</table>
 </div>
+
+    </div>
+  </div>
+</div>
+	
 </body> 
 </html>
