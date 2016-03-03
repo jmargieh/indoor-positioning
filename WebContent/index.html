@@ -69,22 +69,36 @@
 <script>
 L.mapbox.accessToken = 'pk.eyJ1Ijoiam1hcmdpZWgiLCJhIjoiY2loOTdjdW9tMDA0aHZubTMzZ3V6dGY5ZyJ9.o38NX6nKo20UvCqEyEWrSw';
 
-var map = L.mapbox.map('map').setView([24.847, -47.813], 1);
+var map = L.mapbox.map('map').setView([24.847, -47.813], 1.3);
+
+
 
 var featureLayerSpace = L.mapbox.featureLayer()
-.loadURL('json/space.json')
+//.loadURL('/indoor-positioning/upload?filename=space.json')
+.loadURL('/indoor-positioning/json/space.json')
 .addTo(map);
 
 var featureLayerObstacles = L.mapbox.featureLayer()
-.loadURL('json/obstacles.json')
+//.loadURL('/indoor-positioning/upload?filename=obstacles.json')
+.loadURL('/indoor-positioning/json/obstacles.json')
 .addTo(map);
 
 var featureLayerPoints = L.mapbox.featureLayer()
-.loadURL('json/points.json')
+//.loadURL('/indoor-positioning/upload?filename=points.json')
+.loadURL('/indoor-positioning/json/points.json')
 .addTo(map);
 
 
+//Disable drag and zoom handlers.
+map.dragging.disable();
+map.touchZoom.disable();
+map.doubleClickZoom.disable();
 map.scrollWheelZoom.disable();
+map.keyboard.disable();
+
+// Disable tap handler, if present.
+if (map.tap) map.tap.disable();
+
 </script>
 
   </body>

@@ -8,3 +8,11 @@
 .DS_Store
 .DS_Store/
 /.DS_Store/
+
+*.png
+
+*.jpg
+
+WebContent/img/googleplus.png
+
+WebContent/img/gae-logo.png

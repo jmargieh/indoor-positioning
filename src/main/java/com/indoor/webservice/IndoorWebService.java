@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -42,11 +44,16 @@ import com.vividsolutions.jts.geom.Point;
 @Component("IndoorWebService")
 public class IndoorWebService {
 	
+	//space coords
 	final double gridMinX1 = -417.0;
 	final double gridMaxX2 = 305.0;
 	final double gridMinY1 = -72.0;
 	final double gridMaxY2 = 82.0;
+	// space coords
+	
 	final double gridSize = 10.0;
+	
+	final int minimumNumberOfSamples = 3;
 	
 	//points json file
 	private InputStream pointsInputStream = IndoorWebService.class.getResourceAsStream("/json/points.json");
@@ -107,14 +114,21 @@ public class IndoorWebService {
 	@Path("/points")
 	public Response isPointInObstacle() throws IOException {
 
+		/*
+		 * puts points in pointsArray
+		 * puts obstacles in obstaclesArray
+		 */
 		initArrayLists();
 
+		// loop over obstacles array and remove the point from the pointsArray if it's in obstacles
+		// and add it to pointsInObstaclesArray.
 		for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();) {
 			Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
 			for (Iterator<SimpleFeature> pIterator = this.pointsArray.iterator(); pIterator.hasNext();) {
 				SimpleFeature simplefeature = pIterator.next();
 				if (obstacle.contains((Geometry)simplefeature.getAttribute("geometry"))) {
 					// remove the point from pointsArray
+					// we don't need this point since in the n+1 device we need to relocate the point
 					pIterator.remove();
 					// add the problematic point to pointsInObstaclesArray
 					pointsInObstaclesArray.add(simplefeature);
@@ -124,21 +138,26 @@ public class IndoorWebService {
 		}
 		
 		putPointsIntoDeviceHashMap();
-		createDevicesPaths();
+		//createDevicesPaths(); TODO : look at function dif
 		createGridMap();
 		deleteCustomLineStringCrossingObstacle();
-		updateRateGridSquares();
+		updateRateAndPointsGridSquaresNew();
 		updateRateCustomLineInGrid();
 		
 		return Response.status(200).entity("   -----If reached here we succeed!").build();
 
 	}
 	
-	
+	/*
+	 * // this.deviceMap = HashMap with key:deviceid & SimpleFeature points List sorted by timestamp.
+	 */
 	private void putPointsIntoDeviceHashMap() {
 		
 		for (Iterator<SimpleFeature> pIterator = this.pointsArray.iterator(); pIterator.hasNext();) {
 			SimpleFeature simplefeature = pIterator.next();
+			// if device id dosen't exist, create deviceArray with the current point
+			// and add it to the this.deviceMap HashMap.
+			// else add the point to the existed deviceArray, by the ID
 			if( this.deviceMap.containsKey(simplefeature.getID()) == false ) {
 				List<SimpleFeature> deviceArray = new ArrayList<>();
 				deviceArray.add(simplefeature);
@@ -147,7 +166,23 @@ public class IndoorWebService {
 				this.deviceMap.get(simplefeature.getID()).add(simplefeature);
 			}
 		}
+		// remove devices with less than minimumSamples
+		removeDevicesWithLessThanMinimumSamples();
+		// loop over the HashMap values (ArrayList) and sort it by device's timestamp. 
 		sortDeviceHashMapListByTimeStamp();
+	}
+	
+	/*
+	 * loop over deviceMap, and remove devices with less than minimum number of samplings minimumNumberOfSamples.
+	 */
+	private void removeDevicesWithLessThanMinimumSamples() {
+        Iterator<Map.Entry<String, List<SimpleFeature>>> iterator = this.deviceMap.entrySet().iterator();
+        while(iterator.hasNext()){
+            Map.Entry<String, List<SimpleFeature>> entry = iterator.next();
+            if(entry.getValue().size() < this.minimumNumberOfSamples){
+            	iterator.remove();
+            }
+        }
 	}
 	
 	
@@ -176,7 +211,9 @@ public class IndoorWebService {
 		return shapeFactory.createCircle();
 	}
 	
-	// TODO : construct a lineString from given set of points
+	// construct a lineString from given set of points and save it into a devicePathMap
+	// key : deviceID    value: LineString (costructed from the device's points)
+	// TODO : will need to modify this function to give path from  the start and end of each lineString. 
 	private void createDevicesPaths() {
 		
 		int counter = 0;
@@ -195,6 +232,11 @@ public class IndoorWebService {
 			this.devicePathMap.put(list.get(0).getID(), line);
 		}
 	}
+	
+	/*
+	 * update the GridSquare rate
+	 * rate : number of points in the GridSquare.
+	 */
 	private void updateRateGridSquares(){
 		for(int i=0;i<this.gridMapMatrix.length;i++){
 			for(int j=0;j<this.gridMapMatrix[i].length; j++){
@@ -209,10 +251,32 @@ public class IndoorWebService {
 		}
 	}
 	
+	
+	private void updateRateAndPointsGridSquaresNew() {
+		for(int i=0;i<this.gridMapMatrix.length;i++){
+			for(int j=0;j<this.gridMapMatrix[i].length; j++){
+				Iterator<Map.Entry<String, List<SimpleFeature>>> iterator = this.deviceMap.entrySet().iterator();
+				while(iterator.hasNext()){
+					Map.Entry<String, List<SimpleFeature>> entry = iterator.next();
+					for (Iterator<SimpleFeature> pIterator = entry.getValue().iterator(); pIterator.hasNext();) {
+						SimpleFeature simplefeaturePoint = pIterator.next();
+						if( ((Geometry)(gridMapMatrix[i][j].getSquare().getAttribute("element"))).contains((Geometry)simplefeaturePoint.getAttribute("geometry")) ){
+							gridMapMatrix[i][j].setRate(gridMapMatrix[i][j].getRate()+1);
+							gridMapMatrix[i][j].addPointToGridSquare(simplefeaturePoint);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	
+	/*
+	 * update the rate of the CustomLineString, according to it's direction.
+	 */
 	private void updateRateCustomLineInGrid(){
 		for(int i=0; i<this.gridMapMatrix.length; i++){
 			for(int j=0;j<this.gridMapMatrix[i].length; j++){
-				// we need heuristics, meanwhile it's 1
 				List<CustomLineString> customLineStringArray = this.gridMapMatrix[i][j].getLineStringArray();
 				for (Iterator<CustomLineString> cIterator = customLineStringArray.iterator(); cIterator.hasNext();){
 					CustomLineString cls = cIterator.next();
@@ -234,6 +298,9 @@ public class IndoorWebService {
 		}
 	}
 	
+	/*
+	 * loop over the customLineStringArray of each GridSquare in gridMapMatrix, and remove lineString crossing obstacles.
+	 */
 	private void deleteCustomLineStringCrossingObstacle() {
 		boolean isListChanged;
 		for (int i = 0 ; i < this.gridMapMatrix.length ; i++) {
@@ -275,7 +342,7 @@ public class IndoorWebService {
 
 	
 	// creates a Grid Map : Reference : http://docs.geotools.org/latest/userguide/extension/grid.html
-	// each feature is a polygon of size 10x10 
+	// each feature is a polygon of size 10x10 (gridSize x gridSize)
 	private void createGridMap() {
 		
 		try{
@@ -292,10 +359,12 @@ public class IndoorWebService {
 			}
 			
 			// if reached here that means everything is OK with the collection size and Matrix to be allocated is fine
+			// create GridSquareMatrix
 			this.gridMapMatrix = new GridSquare[(int)matrixRows][(int)matrixCols];
+			// get the features
 			SimpleFeatureIterator iterator=collection.features();
 			try {
-				
+				// loop over the matrix and initialize the GridMapMatrix
 				for(int i=(int) (matrixRows-1) ; i>=0 ; i--){
 					for(int j=0 ; j<(int) (matrixCols) && iterator.hasNext() ; j++){
 						SimpleFeature feature = iterator.next();
@@ -306,6 +375,15 @@ public class IndoorWebService {
 				iterator.close();
 				}
 			
+				/*
+				 * loop over the gridMapMatrix, and foreach Polygon g, get the centeroidPoint
+				 * and create a LineString between the current Polygon and it's neighbors.
+				 * |---------|
+				 * |         |
+				 * |    *    |    * -> the centroid point of the polygon connected with the neighbors
+				 * |         |         from the right,left,up and down.
+				 * |---------|
+				 */
 				for(int i=(int) (matrixRows-1) ; i>=0 ; i--){
 					for(int j=0 ; j<(int) (matrixCols) ; j++){
 						

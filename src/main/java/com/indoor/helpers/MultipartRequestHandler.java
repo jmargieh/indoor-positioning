@@ -40,6 +40,7 @@ public class MultipartRequestHandler {
 				temp.setFileSize(part.getSize()/1024 +" Kb");
 				temp.setFileType(part.getContentType());
 				temp.setContent(part.getInputStream());
+				temp.setJsonContentFromInputStream();
 				temp.setTwitter(twitter);
 				
 				// 3.3 Add created FileMeta object to List<FileMeta> files
@@ -91,6 +92,7 @@ public class MultipartRequestHandler {
 						temp.setContent(item.getInputStream());
 						temp.setFileType(item.getContentType());
 						temp.setFileSize(item.getSize()/1024+ "Kb");
+						temp.setJsonContentFromInputStream();
 						
 				    	// 2.7 Add created FileMeta object to List<FileMeta> files
 						files.add(temp);

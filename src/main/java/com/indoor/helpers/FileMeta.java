@@ -1,6 +1,10 @@
 package main.java.com.indoor.helpers;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 
@@ -13,7 +17,7 @@ public class FileMeta {
 	private String fileSize;
 	private String fileType;
 	private String twitter;
-
+	private String jsonContent;
 	
 	private InputStream content;
 	
@@ -48,6 +52,40 @@ public class FileMeta {
 	}
 	public void setTwitter(String twitter){
 		this.twitter = twitter;
+	}
+	
+	public String getJsonContentFromInputStream(){
+		return this.jsonContent;
+	}
+	
+	// convert InputStream to String
+	public void setJsonContentFromInputStream() {
+
+		BufferedReader br = null;
+		StringBuilder sb = new StringBuilder();
+
+		String line;
+		try {
+
+			br = new BufferedReader(new InputStreamReader(this.getContent()));
+			while ((line = br.readLine()) != null) {
+				sb.append(line);
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		this.jsonContent = sb.toString();
+
 	}
 	
 	@Override

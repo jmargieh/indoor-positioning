@@ -11,11 +11,13 @@ public class GridSquare {
 	private SimpleFeature square;
 	private double rate;
 	private List<CustomLineString> customLineStringArray;
+	private List<SimpleFeature> pointsInSquare;
 	
 	public GridSquare(String id, SimpleFeature square, double rate, List<CustomLineString> LineArray){
 		this.id = id;
 		this.square = square;
 		this.rate = rate;
+		this.pointsInSquare = new ArrayList<SimpleFeature>();
 		this.customLineStringArray = new ArrayList<CustomLineString>();
 		for(CustomLineString line : LineArray)
 		{
@@ -26,6 +28,7 @@ public class GridSquare {
 	public GridSquare(String id,SimpleFeature square,double rate) {
 		this.id = id;
 		this.square = square;
+		this.pointsInSquare = new ArrayList<SimpleFeature>();
 		this.customLineStringArray = new ArrayList<CustomLineString>();
 		this.rate = rate;
 	}
@@ -55,6 +58,14 @@ public class GridSquare {
 	
 	public void setRate(double rate){
 		this.rate = rate;
+	}
+	
+	public void addPointToGridSquare(SimpleFeature simplefeaturePoint){
+		this.pointsInSquare.add(simplefeaturePoint);
+	}
+	
+	public List<SimpleFeature> getPointsInSquareArrayList(){
+		return this.pointsInSquare;
 	}
 	
 	}
