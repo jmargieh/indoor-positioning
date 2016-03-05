@@ -72,7 +72,7 @@ public class FileUploadServlet extends HttpServlet {
 		 // 1. Get f from URL upload?f="?"
 		 String value = request.getParameter("f");
 		 String getfiles = request.getParameter("getfiles");
-		 String fileName = request.getParameter("filename");
+		 //String fileName = request.getParameter("filename");
 		 
 
 		 if(getfiles != null && getfiles.compareTo("true") == 0){
@@ -85,20 +85,20 @@ public class FileUploadServlet extends HttpServlet {
 		    	// 4. Send result to client
 		    	mapper.writeValue(response.getOutputStream(), files);
 		 }
-		 else if (fileName != null){
-			 
-			 	FileMeta getFile = getFileContentByName(fileName);
-			 	if( getFile != null) {
-				 	response.setContentType("application/json; charset=UTF-8");
-				 	PrintWriter out = response.getWriter();
-			        	        
-			        String s = getFile.getJsonContentFromInputStream();
-			        
-			        out.println(s);
-			        out.close();	
-			 	}
-		   
-		 }
+//		 else if (fileName != null){
+//			 
+//			 	FileMeta getFile = getFileContentByName(fileName);
+//			 	if( getFile != null) {
+//				 	response.setContentType("application/json; charset=UTF-8");
+//				 	PrintWriter out = response.getWriter();
+//			        	        
+//			        String s = getFile.getJsonContentFromInputStream();
+//			        
+//			        out.println(s);
+//			        out.close();	
+//			 	}
+//		   
+//		 }
 		 else {
 		 // 2. Get the file of index "f" from the list "files"
 		 FileMeta getFile = files.get(Integer.parseInt(value));
@@ -126,7 +126,7 @@ public class FileUploadServlet extends HttpServlet {
 		 }
 		 }
 	}
-	
+	/*
 	private FileMeta getFileContentByName(String filename){
 
 		ListIterator<FileMeta> listIterator = files.listIterator();
@@ -141,7 +141,7 @@ public class FileUploadServlet extends HttpServlet {
 		FileMeta file = null;
 		return file;
 			}
-	
+*/	
 
 	
 }

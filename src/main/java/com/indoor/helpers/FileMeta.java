@@ -17,7 +17,7 @@ public class FileMeta {
 	private String fileSize;
 	private String fileType;
 	private String twitter;
-	private String jsonContent;
+	//private String jsonContent;
 	
 	private InputStream content;
 	
@@ -53,11 +53,12 @@ public class FileMeta {
 	public void setTwitter(String twitter){
 		this.twitter = twitter;
 	}
-	
+	/*
 	public String getJsonContentFromInputStream(){
 		return this.jsonContent;
 	}
-	
+	*/
+	/*
 	// convert InputStream to String
 	public void setJsonContentFromInputStream() {
 
@@ -87,6 +88,7 @@ public class FileMeta {
 		this.jsonContent = sb.toString();
 
 	}
+	*/
 	
 	@Override
 	public String toString() {

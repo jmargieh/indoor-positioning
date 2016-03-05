@@ -3,13 +3,16 @@ package main.java.com.indoor.webservice;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -18,6 +21,7 @@ import main.java.com.indoor.helpers.CustomComparator;
 import main.java.com.indoor.helpers.CustomLineString;
 import main.java.com.indoor.helpers.GridSquare;
 import main.java.com.indoor.helpers.CustomLineString.Direction;
+import main.java.com.indoor.helpers.NewDeviceSimpleFeaturePoint;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -59,6 +63,15 @@ public class IndoorWebService {
 	private InputStream pointsInputStream = IndoorWebService.class.getResourceAsStream("/json/points.json");
 	//obstacles json file - generally polygons
 	private InputStream obstaclesInputStream = IndoorWebService.class.getResourceAsStream("/json/obstacles.json");
+	
+	// Device n+1 (the device we get after we did the pre-processing)
+	private InputStream deviceInputStream = IndoorWebService.class.getResourceAsStream("/json/device.json");
+	// new device id
+	private String newDeviceId;
+	// new device points array
+	private List<SimpleFeature> newDevicePointsArray = new ArrayList<>();
+	// 
+	private List<NewDeviceSimpleFeaturePoint> newDeviceSimpleFeaturePointArray = new ArrayList<>();
 	//points arrayList initialization
 	private List<SimpleFeature> pointsArray = new ArrayList<>();
 	// obstacles arrayList initialization
@@ -76,6 +89,7 @@ public class IndoorWebService {
 	private void closeInputStreams() throws IOException {
 		pointsInputStream.close();
 		obstaclesInputStream.close();
+		deviceInputStream.close();
 	}
 
 	// initializating pointsArray and obstaclesArray
@@ -102,6 +116,14 @@ public class IndoorWebService {
 				this.obstaclesArray.add(feature);
 			}
 			
+			rd = GeoJSONUtil.toReader(this.deviceInputStream);
+			features = io.streamFeatureCollection(rd);
+			while (features.hasNext()) {
+				feature = features.next();
+				//g = (Geometry) feature.getAttribute("geometry");
+				this.newDeviceId = feature.getID();
+				this.newDevicePointsArray.add(feature);
+			}
 			closeInputStreams();
 
 		} catch (IOException e) {
@@ -137,6 +159,11 @@ public class IndoorWebService {
 			}
 		}
 		
+		// adds the new device points to the point array
+		// this will not remove points in obstacles because we need to relocate them.
+		this.pointsArray.addAll(newDevicePointsArray);
+		
+		
 		putPointsIntoDeviceHashMap();
 		//createDevicesPaths(); TODO : look at function dif
 		createGridMap();
@@ -144,9 +171,113 @@ public class IndoorWebService {
 		updateRateAndPointsGridSquaresNew();
 		updateRateCustomLineInGrid();
 		
+		processNewDevice();
+		
+		//findAllPosibblePaths(2, 5);
+		
 		return Response.status(200).entity("   -----If reached here we succeed!").build();
 
 	}
+	
+	/*
+	 * Process the n+1 Device 
+	 */
+	private void processNewDevice() {
+		for (Iterator<SimpleFeature> ndpIterator = this.deviceMap.get(this.newDeviceId).iterator(); ndpIterator.hasNext();) {
+			SimpleFeature simplefeature = ndpIterator.next();
+			int [] indexes = getPointIndexes(simplefeature);
+			if (indexes != null) {
+				this.newDeviceSimpleFeaturePointArray.add(new NewDeviceSimpleFeaturePoint(simplefeature,indexes[0],indexes[1]));
+			}
+		}
+		reLocatePointsInObstacle();	
+	}
+	
+	
+	private void reLocatePointsInObstacle() {
+		
+		for (int i = 0; i < this.newDeviceSimpleFeaturePointArray.size(); i++) {
+			NewDeviceSimpleFeaturePoint ndsfp = this.newDeviceSimpleFeaturePointArray.get(i);
+			if(isPointInObstacle(ndsfp.getSimpleFeaturePoint())) {
+				int[] newIndexes = heuristicCalculation(ndsfp,i);
+				ndsfp.setRowIndex(newIndexes[0]);
+				ndsfp.setColumnIndex(newIndexes[1]);
+			}
+		}
+	}
+	
+	/*
+	 * returns the indexes of GridSquare Matrix, where to relocate the point
+	 */
+	private int[] heuristicCalculation(NewDeviceSimpleFeaturePoint ndsfp, int index) {
+		int [] indexes =  {ndsfp.getRowIndex(),ndsfp.getColumnIndex()};
+		double res, max=0;
+		int startColumn = ndsfp.getColumnIndex(),startRow = ndsfp.getRowIndex(),endColumn = ndsfp.getColumnIndex(),endRow = ndsfp.getRowIndex();
+		
+		if(ndsfp.getRowIndex() > 0 ) {
+			startRow = ndsfp.getRowIndex() -1 ;
+		}
+		if(ndsfp.getRowIndex() < this.gridMapMatrix.length) {
+			endRow = ndsfp.getRowIndex() + 1;
+		}
+		if(ndsfp.getColumnIndex() > 0 ) {
+			startColumn = ndsfp.getColumnIndex() -1 ;
+		}
+		if(ndsfp.getColumnIndex() < this.gridMapMatrix[0].length) {
+			endColumn = ndsfp.getColumnIndex() + 1;
+		}
+		
+		for(int i= startRow; i<=endRow; i++) {
+			for (int j = startColumn; j<=endColumn; j++){
+				if( i!= ndsfp.getRowIndex() || j!= ndsfp.getColumnIndex() ){
+					Geometry g = (Geometry)this.gridMapMatrix[i][j].getSquare().getAttribute("element");
+					Point centroidPoint = g.getCentroid();
+					if(index+1 < this.newDeviceSimpleFeaturePointArray.size()) {
+						double distance = calculateDistance(centroidPoint,(Geometry)this.newDeviceSimpleFeaturePointArray.get(index+1).getSimpleFeaturePoint().getAttribute("geometry"));
+						res = (1/distance) + gridMapMatrix[i][j].getRate();
+						if(res > max) {
+							max = res;
+							indexes[0] = i;
+							indexes[1] = j;
+						}
+					}
+				}
+			}
+		}
+		
+		return indexes;
+	}
+	
+	
+	private boolean isPointInObstacle(SimpleFeature point) {
+		for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
+			Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
+			if (obstacle.contains((Geometry)point.getAttribute("geometry"))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	/*
+	 * get indexes of the GridSquare that cointains the simplefeaturePoint
+	 */
+	private int[] getPointIndexes(SimpleFeature simplefeaturePoint) {
+		int [] indexes = new int[2];
+		for(int i=0;i<this.gridMapMatrix.length;i++){
+			for(int j=0;j<this.gridMapMatrix[i].length; j++){
+				if( ((Geometry)(gridMapMatrix[i][j].getSquare().getAttribute("element"))).contains((Geometry)simplefeaturePoint.getAttribute("geometry")) ){
+					indexes[0] = i;
+					indexes[1] = j;
+					return indexes;
+				}
+			}
+		}
+		// if reached here the point is completely outside of the space. Let's hope there's not points out of space :)
+		return null;
+	}
+	
 	
 	/*
 	 * // this.deviceMap = HashMap with key:deviceid & SimpleFeature points List sorted by timestamp.
@@ -434,5 +565,44 @@ public class IndoorWebService {
 			}
 		
 	}
+	
+
+	/*
+	 *  x is number of 1's - right or left
+	 *  n is the length of the path.
+	 *  return a binary string which defines the paths from source point to the destination point
+	 */
+	private List<String> findAllPosibblePaths(int x, int n) {
+
+		List<String> possiblePaths = new ArrayList<>();
+		
+	    Set<BigInteger> result = new LinkedHashSet<>();
+	    for (int j = x; j > 0; j--) {
+	        Set<BigInteger> a = new LinkedHashSet<>();
+
+	        for (int i = 0; i < n - j + 1; i++) {
+	            if (j == x) {
+	                a.add(BigInteger.ZERO.flipBit(i));
+	            } else {
+	                for (BigInteger num : result) {
+	                    if (num != null && !num.testBit(i) && (i >= (n - j) || num.getLowestSetBit() >= i-1))
+	                        a.add(num.setBit(i));
+	                }
+	            }
+	        }
+	        result = a;
+	    }
+
+	    String zeros = new String(new char[n]).replace("\0", "0");
+	    for (BigInteger i : result) {
+	        String binary = i.toString(2);
+	        //System.out.println(zeros.substring(0, n - binary.length()) + binary);
+	        possiblePaths.add(zeros.substring(0, n - binary.length()) + binary);
+	    }
+	    
+	    return possiblePaths;
+
+	}
+	
 	
 }
