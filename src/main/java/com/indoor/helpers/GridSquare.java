@@ -12,6 +12,7 @@ public class GridSquare {
 	private double rate;
 	private List<CustomLineString> customLineStringArray;
 	private List<SimpleFeature> pointsInSquare;
+	private boolean isInObstacle;
 	
 	public GridSquare(String id, SimpleFeature square, double rate, List<CustomLineString> LineArray){
 		this.id = id;
@@ -19,6 +20,7 @@ public class GridSquare {
 		this.rate = rate;
 		this.pointsInSquare = new ArrayList<SimpleFeature>();
 		this.customLineStringArray = new ArrayList<CustomLineString>();
+		this.setIsInObstacle(false);
 		for(CustomLineString line : LineArray)
 		{
 			this.customLineStringArray.add(line);
@@ -31,6 +33,7 @@ public class GridSquare {
 		this.pointsInSquare = new ArrayList<SimpleFeature>();
 		this.customLineStringArray = new ArrayList<CustomLineString>();
 		this.rate = rate;
+		this.setIsInObstacle(false);
 	}
 	public String getId(){
 		return this.id;
@@ -66,6 +69,14 @@ public class GridSquare {
 	
 	public List<SimpleFeature> getPointsInSquareArrayList(){
 		return this.pointsInSquare;
+	}
+
+	public boolean getIsInObstacle() {
+		return isInObstacle;
+	}
+
+	public void setIsInObstacle(boolean isInObstacle) {
+		this.isInObstacle = isInObstacle;
 	}
 	
 	}

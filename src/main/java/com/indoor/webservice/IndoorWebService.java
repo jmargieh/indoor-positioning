@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.ws.rs.*;
@@ -21,7 +20,7 @@ import main.java.com.indoor.helpers.CustomComparator;
 import main.java.com.indoor.helpers.CustomLineString;
 import main.java.com.indoor.helpers.GridSquare;
 import main.java.com.indoor.helpers.CustomLineString.Direction;
-import main.java.com.indoor.helpers.NewDeviceSimpleFeaturePoint;
+import main.java.com.indoor.helpers.SuperSimpleFeaturePoint;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -55,6 +54,9 @@ public class IndoorWebService {
 	final double gridMaxY2 = 82.0;
 	// space coords
 	
+	final double distanationLineRateWeight = 0.4;
+	final double sourceLineRateWeight = 0.6; 
+	
 	final double gridSize = 10.0;
 	
 	final int minimumNumberOfSamples = 3;
@@ -70,8 +72,8 @@ public class IndoorWebService {
 	private String newDeviceId;
 	// new device points array
 	private List<SimpleFeature> newDevicePointsArray = new ArrayList<>();
-	// 
-	private List<NewDeviceSimpleFeaturePoint> newDeviceSimpleFeaturePointArray = new ArrayList<>();
+	// HashMap with key:deviceid & SimpleFeature points List sorted by timestamp.
+	private HashMap<String, List<SuperSimpleFeaturePoint>> deviceSuperSimpleFeaturePointMap = new HashMap<String, List<SuperSimpleFeaturePoint>>();
 	//points arrayList initialization
 	private List<SimpleFeature> pointsArray = new ArrayList<>();
 	// obstacles arrayList initialization
@@ -151,7 +153,7 @@ public class IndoorWebService {
 				if (obstacle.contains((Geometry)simplefeature.getAttribute("geometry"))) {
 					// remove the point from pointsArray
 					// we don't need this point since in the n+1 device we need to relocate the point
-					pIterator.remove();
+					//pIterator.remove();
 					// add the problematic point to pointsInObstaclesArray
 					pointsInObstaclesArray.add(simplefeature);
 				}
@@ -170,8 +172,9 @@ public class IndoorWebService {
 		deleteCustomLineStringCrossingObstacle();
 		updateRateAndPointsGridSquaresNew();
 		updateRateCustomLineInGrid();
-		
-		processNewDevice();
+		updateGridSquaresWithinObstacles();
+		initDeviceSuperSimpleFeaturePointMap(); // a duplicate 
+		reLocatePointsInObstacle();
 		
 		//findAllPosibblePaths(2, 5);
 		
@@ -180,23 +183,46 @@ public class IndoorWebService {
 	}
 	
 	/*
-	 * Process the n+1 Device 
+	 * need to loop over deviceMap and covert it into DeviceSuperSimpleFeaturePointMap
+	 * (The same map with different class) -> this is done in order to user same heuristic function
+	 * and retreive indexes i,j in future automaticaly
 	 */
-	private void processNewDevice() {
-		for (Iterator<SimpleFeature> ndpIterator = this.deviceMap.get(this.newDeviceId).iterator(); ndpIterator.hasNext();) {
-			SimpleFeature simplefeature = ndpIterator.next();
-			int [] indexes = getPointIndexes(simplefeature);
-			if (indexes != null) {
-				this.newDeviceSimpleFeaturePointArray.add(new NewDeviceSimpleFeaturePoint(simplefeature,indexes[0],indexes[1]));
+	private void initDeviceSuperSimpleFeaturePointMap() {
+		Iterator<Map.Entry<String, List<SimpleFeature>>> iterator = this.deviceMap.entrySet().iterator();
+		Map.Entry<String, List<SimpleFeature>> entry;
+		SimpleFeature simplefeature;
+		int [] indexes;
+        while(iterator.hasNext()){
+            entry = iterator.next();
+            List<SuperSimpleFeaturePoint> deviceSuperSimpleFeatureArray = new ArrayList<>();
+            this.deviceSuperSimpleFeaturePointMap.put(entry.getKey(), deviceSuperSimpleFeatureArray);
+            // loop over device points List
+            for (Iterator<SimpleFeature> pIterator = entry.getValue().iterator(); pIterator.hasNext();) {
+				simplefeature = pIterator.next();
+				indexes = getPointIndexesInGridSquare(simplefeature);
+				this.deviceSuperSimpleFeaturePointMap.get(entry.getKey()).add(new SuperSimpleFeaturePoint(simplefeature,indexes[0],indexes[1]));
 			}
-		}
-		reLocatePointsInObstacle();	
+        }	
 	}
 	
-	
 	private void reLocatePointsInObstacle() {
-		
-		for (int i = 0; i < this.newDeviceSimpleFeaturePointArray.size(); i++) {
+		Iterator<Map.Entry<String, List<SuperSimpleFeaturePoint>>> iterator = this.deviceSuperSimpleFeaturePointMap.entrySet().iterator();
+		Map.Entry<String, List<SuperSimpleFeaturePoint>> entry;
+		SuperSimpleFeaturePoint superSimpleFeature;
+		int[] newIndexes;
+        while(iterator.hasNext()){
+            entry = iterator.next();
+            for (int i=0; i<entry.getValue().size(); i++ ) {
+            	superSimpleFeature = entry.getValue().get(i);
+            	if(isPointInObstacle(superSimpleFeature.getSimpleFeaturePoint())) {
+    				newIndexes = heuristicCalculation(superSimpleFeature,i, entry.getKey());
+    				superSimpleFeature.setRowIndex(newIndexes[0]);
+    				superSimpleFeature.setColumnIndex(newIndexes[1]);
+    			}
+            }
+        }
+		/*
+		for (int i = 0; i < this.deviceMap.size(); i++) {
 			NewDeviceSimpleFeaturePoint ndsfp = this.newDeviceSimpleFeaturePointArray.get(i);
 			if(isPointInObstacle(ndsfp.getSimpleFeaturePoint())) {
 				int[] newIndexes = heuristicCalculation(ndsfp,i);
@@ -204,12 +230,13 @@ public class IndoorWebService {
 				ndsfp.setColumnIndex(newIndexes[1]);
 			}
 		}
+		*/
 	}
 	
 	/*
 	 * returns the indexes of GridSquare Matrix, where to relocate the point
 	 */
-	private int[] heuristicCalculation(NewDeviceSimpleFeaturePoint ndsfp, int index) {
+	private int[] heuristicCalculation(SuperSimpleFeaturePoint ndsfp, int index, String deviceId) {
 		int [] indexes =  {ndsfp.getRowIndex(),ndsfp.getColumnIndex()};
 		double res, max=0;
 		int startColumn = ndsfp.getColumnIndex(),startRow = ndsfp.getRowIndex(),endColumn = ndsfp.getColumnIndex(),endRow = ndsfp.getRowIndex();
@@ -232,8 +259,8 @@ public class IndoorWebService {
 				if( i!= ndsfp.getRowIndex() || j!= ndsfp.getColumnIndex() ){
 					Geometry g = (Geometry)this.gridMapMatrix[i][j].getSquare().getAttribute("element");
 					Point centroidPoint = g.getCentroid();
-					if(index+1 < this.newDeviceSimpleFeaturePointArray.size()) {
-						double distance = calculateDistance(centroidPoint,(Geometry)this.newDeviceSimpleFeaturePointArray.get(index+1).getSimpleFeaturePoint().getAttribute("geometry"));
+					if(index+1 < this.deviceSuperSimpleFeaturePointMap.get(deviceId).size()) {
+						double distance = calculateDistance(centroidPoint,(Geometry)this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index+1).getSimpleFeaturePoint().getAttribute("geometry"));
 						res = (1/distance) + gridMapMatrix[i][j].getRate();
 						if(res > max) {
 							max = res;
@@ -247,7 +274,6 @@ public class IndoorWebService {
 		
 		return indexes;
 	}
-	
 	
 	private boolean isPointInObstacle(SimpleFeature point) {
 		for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
@@ -263,7 +289,7 @@ public class IndoorWebService {
 	/*
 	 * get indexes of the GridSquare that cointains the simplefeaturePoint
 	 */
-	private int[] getPointIndexes(SimpleFeature simplefeaturePoint) {
+	private int[] getPointIndexesInGridSquare(SimpleFeature simplefeaturePoint) {
 		int [] indexes = new int[2];
 		for(int i=0;i<this.gridMapMatrix.length;i++){
 			for(int j=0;j<this.gridMapMatrix[i].length; j++){
@@ -406,22 +432,24 @@ public class IndoorWebService {
 	 * update the rate of the CustomLineString, according to it's direction.
 	 */
 	private void updateRateCustomLineInGrid(){
+		double sourceLineRate;
 		for(int i=0; i<this.gridMapMatrix.length; i++){
 			for(int j=0;j<this.gridMapMatrix[i].length; j++){
 				List<CustomLineString> customLineStringArray = this.gridMapMatrix[i][j].getLineStringArray();
 				for (Iterator<CustomLineString> cIterator = customLineStringArray.iterator(); cIterator.hasNext();){
 					CustomLineString cls = cIterator.next();
+					sourceLineRate = this.gridMapMatrix[i][j].getRate();
 					if(cls.getDirection() == Direction.UP){
-						cls.setRate(this.gridMapMatrix[i-1][j].getRate());
+						cls.setRate((this.distanationLineRateWeight * this.gridMapMatrix[i-1][j].getRate()) + (this.sourceLineRateWeight * sourceLineRate));
 					}
 					if(cls.getDirection() == Direction.RIGHT){
-						cls.setRate(this.gridMapMatrix[i][j+1].getRate());
+						cls.setRate((this.distanationLineRateWeight * this.gridMapMatrix[i][j+1].getRate()) + (this.sourceLineRateWeight * sourceLineRate));
 					}
 					if(cls.getDirection() == Direction.DOWN){
-						cls.setRate(this.gridMapMatrix[i+1][j].getRate());
+						cls.setRate((this.distanationLineRateWeight * this.gridMapMatrix[i+1][j].getRate()) + (this.sourceLineRateWeight * sourceLineRate));
 					}
 					if(cls.getDirection() == Direction.LEFT){
-						cls.setRate(this.gridMapMatrix[i][j-1].getRate());
+						cls.setRate((this.distanationLineRateWeight * this.gridMapMatrix[i][j-1].getRate()) + (this.sourceLineRateWeight * sourceLineRate));
 					}
 					
 				}
@@ -470,6 +498,22 @@ public class IndoorWebService {
 		return line;
 	}
 	
+	/**
+	 * the function will update IsInObstacle to true if the GridSquare intersects with an obstacle.
+	 */
+	private void updateGridSquaresWithinObstacles() {
+		for(int i=0;i<this.gridMapMatrix.length;i++){
+			for(int j=0;j<this.gridMapMatrix[i].length; j++){
+				for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();) {
+					SimpleFeature simplefeature = oIterator.next();
+					if( ((Geometry)(gridMapMatrix[i][j].getSquare().getAttribute("element"))).intersects((Geometry)simplefeature.getAttribute("geometry")) ){
+						gridMapMatrix[i][j].setIsInObstacle(true);
+					}
+				}
+
+			}
+		}
+	}
 
 	
 	// creates a Grid Map : Reference : http://docs.geotools.org/latest/userguide/extension/grid.html
@@ -602,7 +646,4 @@ public class IndoorWebService {
 	    
 	    return possiblePaths;
 
-	}
-	
-	
-}
+	}}
