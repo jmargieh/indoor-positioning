@@ -8,7 +8,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+         	"marker-symbol": "circle-stroked",
             "timestamp": 9
         },
         "geometry": {
@@ -24,7 +24,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 3
         },
         "geometry": {
@@ -40,7 +40,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 10
         },
         "geometry": {
@@ -56,7 +56,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 1
         },
         "geometry": {
@@ -72,7 +72,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 5
         },
         "geometry": {
@@ -88,7 +88,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 8
         },
         "geometry": {
@@ -104,7 +104,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 2
         },
         "geometry": {
@@ -120,7 +120,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 7
         },
         "geometry": {
@@ -136,7 +136,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 4
         },
         "geometry": {
@@ -152,7 +152,7 @@
             "description": "dev_n",
             "marker-size": "medium",
             "marker-color": "#1087bf",
-            "marker-symbol": "",
+            "marker-symbol": "circle-stroked",
             "timestamp": 6
         },
         "geometry": {

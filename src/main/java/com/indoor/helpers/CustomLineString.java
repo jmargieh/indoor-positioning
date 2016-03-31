@@ -10,7 +10,11 @@ public class CustomLineString {
 	    UP,
 	    RIGHT,
 	    DOWN,
-	    LEFT
+	    LEFT,
+	    DIAGONALUPLEFT,
+	    DIAGONALUPRIGHT,
+	    DIAGONALDOWNLEFT,
+	    DIAGONALDOWNRIGHT
 	}
 	private Direction direction;
 	
@@ -32,6 +36,18 @@ public class CustomLineString {
 			break;
 		case "LEFT":
 			this.setDirection(Direction.LEFT);
+			break;
+		case "DIAGONALUPLEFT":
+			this.setDirection(Direction.DIAGONALUPLEFT);
+			break;
+		case "DIAGONALUPRIGHT":
+			this.setDirection(Direction.DIAGONALUPRIGHT);
+			break;
+		case "DIAGONALDOWNLEFT":
+			this.setDirection(Direction.DIAGONALDOWNLEFT);
+			break;
+		case "DIAGONALDOWNRIGHT":
+			this.setDirection(Direction.DIAGONALDOWNRIGHT);
 			break;
  
 		default:

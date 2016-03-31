@@ -7,7 +7,7 @@ import org.opengis.feature.simple.SimpleFeature;
 
 public class GridSquare {
 	
-	private String id;
+	private String id; // id = rowIndex-columnIndex
 	private SimpleFeature square;
 	private double rate;
 	private List<CustomLineString> customLineStringArray;
@@ -77,6 +77,14 @@ public class GridSquare {
 
 	public void setIsInObstacle(boolean isInObstacle) {
 		this.isInObstacle = isInObstacle;
+	}
+	
+	public int getRowIndex() {
+		return Integer.parseInt(this.id.split("-")[0]);
+	}
+	
+	public int getColumnIndex() {
+		return Integer.parseInt(this.id.split("-")[1]);
 	}
 	
 	}

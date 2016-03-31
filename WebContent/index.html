@@ -88,6 +88,11 @@ var featureLayerPoints = L.mapbox.featureLayer()
 .loadURL('/indoor-positioning/json/points.json')
 .addTo(map);
 
+var featureLayerPoints = L.mapbox.featureLayer()
+//.loadURL('/indoor-positioning/upload?filename=points.json')
+.loadURL('/indoor-positioning/json/device.json')
+.addTo(map);
+
 
 //Disable drag and zoom handlers.
 map.dragging.disable();
