@@ -3,6 +3,8 @@ package main.java.com.indoor.helpers;
 import java.util.ArrayList;
 import java.util.List;
 
+import main.java.com.indoor.helpers.CustomLineString.Direction;
+
 import org.opengis.feature.simple.SimpleFeature;
 
 public class GridSquare {
@@ -85,6 +87,24 @@ public class GridSquare {
 	
 	public int getColumnIndex() {
 		return Integer.parseInt(this.id.split("-")[1]);
+	}
+	
+	public CustomLineString getCustomLineStringByDirection(Direction direction) {
+		CustomLineString cls = null;
+		for (int i = 0; i < this.customLineStringArray.size(); i++) {
+			if(this.customLineStringArray.get(i).getDirection().compareTo(direction) == 0) {
+				cls =  this.customLineStringArray.get(i);
+			}
+		}
+		return cls;
+	}
+	
+	public void setCustomLineStringByDirection(Direction direction, double rate) {
+		for (int i = 0; i < this.customLineStringArray.size(); i++) {
+			if(this.customLineStringArray.get(i).getDirection().compareTo(direction) == 0) {
+				this.customLineStringArray.get(i).setRate(rate);
+			}
+		}
 	}
 	
 	}

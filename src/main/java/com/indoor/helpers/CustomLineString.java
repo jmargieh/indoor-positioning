@@ -76,6 +76,9 @@ public class CustomLineString {
 		this.rate = rate;
 	}
 
+	public void increaseRateBy(double rate) {
+		this.rate += rate;
+	}
 
 	public Direction getDirection() {
 		return this.direction;
