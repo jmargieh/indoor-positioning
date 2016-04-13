@@ -4,8 +4,21 @@
 <meta charset=utf-8 />
 <title>Home</title>
 <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<!-- 
 <script src='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.js'></script>
 <link href='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.css' rel='stylesheet' />
+--->
+
+    <link rel="stylesheet" href="css/leaflet.css" />
+<!--[if lte IE 8]>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.6.4/leaflet.ie.css" />
+<![endif]-->
+
+<script src="js/leaflet-src.js"></script>
+<script type="text/javascript" src="js/leaflet.ajax.js"></script>
+<script src="js/spin.js"></script>
+<script src="js/leaflet.spin.js"></script>
+
 
 <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
 <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
@@ -67,10 +80,71 @@
 </div>
 
 <script>
+
+var m= L.map('map',{
+    center: [24.847, -47.813],
+    zoom: 1.3,
+    zoomControl: false,
+    doubleClickZoom: false,
+    touchZoom: false
+	});
+
+function popUp(f,l){
+    var out = [];
+    if (f.properties){
+        for(key in f.properties){
+        	if( (key === "title" || key === "description") && f.properties[key] !== "" ) {
+            out.push(key+": "+f.properties[key]);
+        	}
+        }
+        l.bindPopup(out.join("<br />"));
+    }
+}
+var jsonTest = new L.GeoJSON.AJAX(["/indoor-positioning/json/space.json","/indoor-positioning/json/obstacles.json"],{onEachFeature:popUp}).addTo(m);
+
+	function geojsonMarkerOptions(color) {
+		if(color !== "") {
+			return {
+			    radius: 4,
+			    fillColor: color,
+			    color: "#000",
+			    weight: 1,
+			    opacity: 1,
+			    fillOpacity: 0.8
+			}
+		}
+		// generate random color in case marker-color == ""
+		return {
+		    radius: 4,
+		    fillColor: getRandomColor(),
+		    color: "#000",
+		    weight: 1,
+		    opacity: 1,
+		    fillOpacity: 0.8
+		}
+	};
+
+	var testjson2 = new L.GeoJSON.AJAX(["/indoor-positioning/json/points.json"], {
+	    pointToLayer: function (feature, latlng) {
+	    	var color = feature.properties["marker-color"];
+	        return L.circleMarker(latlng, geojsonMarkerOptions(color));
+	    },
+	    onEachFeature:popUp
+	}).addTo(m);
+
+	function getRandomColor() {
+	    var letters = '0123456789ABCDEF'.split('');
+	    var color = '#';
+	    for (var i = 0; i < 6; i++ ) {
+	        color += letters[Math.floor(Math.random() * 16)];
+	    }
+	    return color;
+	}
+
+/*
 L.mapbox.accessToken = 'pk.eyJ1Ijoiam1hcmdpZWgiLCJhIjoiY2loOTdjdW9tMDA0aHZubTMzZ3V6dGY5ZyJ9.o38NX6nKo20UvCqEyEWrSw';
 
 var map = L.mapbox.map('map').setView([24.847, -47.813], 1.3);
-
 
 
 var featureLayerSpace = L.mapbox.featureLayer()
@@ -103,7 +177,7 @@ map.keyboard.disable();
 
 // Disable tap handler, if present.
 if (map.tap) map.tap.disable();
-
+*/
 </script>
 
   </body>

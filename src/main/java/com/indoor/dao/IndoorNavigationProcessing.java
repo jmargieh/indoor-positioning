@@ -54,7 +54,7 @@ public class IndoorNavigationProcessing {
 		final double distanationLineRateWeight = 0.4;
 		final double sourceLineRateWeight = 0.6; 
 		
-		final double gridSize = 5.0; // 0.75; //10.0 // 2.5
+		final double gridSize = 2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
 		
 		final int minimumNumberOfSamples = 3;
 		final double pointDistanceThreshold = 10; // should be 10 -- >
@@ -217,12 +217,32 @@ public class IndoorNavigationProcessing {
 						}
 					}
 					
-					updateGridMapMatrixCustomLineStringRate(pathCoordinates);
+					updateGridMapMatrixCustomLineStringAndGridSquareRates(pathCoordinates);
 					
 					// here contruct a new super simple feature arraylist and add it to the device id
 					
+					// creating a copy of an existing superSimpleFeature (same attributes)
+					SuperSimpleFeaturePoint superSimpleFeature = entry.getValue().get(0); // get one of the superSimpleFeatures
+					SimpleFeatureType type = superSimpleFeature.getSimpleFeaturePoint().getType(); // get type
+					SimpleFeatureBuilder builder = new SimpleFeatureBuilder(type); // initiate builder of the type
+					builder.init(superSimpleFeature.getSimpleFeaturePoint()); // init
+					
+					List<SuperSimpleFeaturePoint> superSimpleFeaturePointsList = new ArrayList<SuperSimpleFeaturePoint>();
+					for (int i = 0; i < pathCoordinates.size(); i++) {
+						SimpleFeature simpleFeaturePoint = builder.buildFeature( superSimpleFeature.getSimpleFeaturePoint().getID()); // make copy with same device id
+						Geometry gridSquare = (Geometry)gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].getSquare().getAttribute("element");
+	    				Geometry point = gridSquare.getCentroid();
+	    				simpleFeaturePoint.setAttribute("geometry", point.toText());
+	    				simpleFeaturePoint.setAttribute("timestamp", i+1);
+	    				simpleFeaturePoint.setAttribute("title", "point_".concat(String.valueOf(i+1)));
+						SuperSimpleFeaturePoint superSimpleFeaturePoint = new SuperSimpleFeaturePoint(simpleFeaturePoint, pathCoordinates.get(i)[0], pathCoordinates.get(i)[1]);
+						superSimpleFeaturePointsList.add(superSimpleFeaturePoint);
+					}					
+					entry.getValue().clear(); // clear all existing points
+					entry.getValue().addAll(superSimpleFeaturePointsList); // add the new points
+					
 				}catch (NullPointerException e) {
-					if ((e.getMessage().compareTo("No Possible Path") == 0) && entry.getKey() != null) {
+					if (e.getMessage() != null && (e.getMessage().compareTo("No Possible Path") == 0) && entry != null) {
 						//update GridSquare Rate since this device will not be considered in calculations.
 						updateGridSquareRateBeforeDeviceRemove(entry.getKey());
 						iterator.remove(); // remove device that has no possible path between two points
@@ -271,14 +291,15 @@ public class IndoorNavigationProcessing {
 			return direction;
 		}
 		
-		private void updateGridMapMatrixCustomLineStringRate(List<int[]> pathCoordinates) {
+		private void updateGridMapMatrixCustomLineStringAndGridSquareRates(List<int[]> pathCoordinates) {
 			// will need to loop over pathCoordinates and update GridMapMatrix Line String according
 			// to the Custom Line String Direction.
 			CustomLineString.Direction direction = null;
 			for(int i=0; i<pathCoordinates.size()-1; i++){
+				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].increaseGridSquareRateBy(1.0);
 				direction = getDirectionFromTwoPoint(pathCoordinates.get(i) , pathCoordinates.get(i+1) );
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].getCustomLineStringByDirection(direction).increaseRateBy(1.0);
-			}	
+			}
 		}
 		
 		private void reLocatePointsInObstacle() {
@@ -301,21 +322,13 @@ public class IndoorNavigationProcessing {
 			    				Geometry point = gridSquare.getCentroid();
 			    				// point.toText() will return POINT (x,y) - change point in obstacle coordinates to be the centroid of the
 			    				// gridSquare coordinates.
-			    				
-			    				/////
-//			    				SimpleFeatureType type = superSimpleFeature.getSimpleFeaturePoint().getType();
-//			    				SimpleFeatureBuilder builder = new SimpleFeatureBuilder(type);
-//			    				builder.init(superSimpleFeature.getSimpleFeaturePoint());
-//			    				SimpleFeature copy = builder.buildFeature( superSimpleFeature.getSimpleFeaturePoint().getID());
-//			    				copy.setAttribute("geometry", "POINT (-113.105468 31117.509725)");
-			    				/////
 			    				superSimpleFeature.getSimpleFeaturePoint().setAttribute("geometry", point.toText());
 		    			}
 		            }
 	        	}catch (IllegalAccessException e) {
 					e.printStackTrace();
 				} catch (NullPointerException e) {
-					if ((e.getMessage().compareTo("No Possible Path") == 0) && entry.getKey() != null) {
+					if (e.getMessage() != null && (e.getMessage().compareTo("No Possible Path") == 0) && entry != null) {
 						//update GridSquare Rate since this device will not be considered in calculations.
 						updateGridSquareRateBeforeDeviceRemove(entry.getKey());
 						iterator.remove(); // remove device that has no possible path between two points

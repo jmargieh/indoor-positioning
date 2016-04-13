@@ -81,6 +81,10 @@ public class GridSquare {
 		this.isInObstacle = isInObstacle;
 	}
 	
+	public void increaseGridSquareRateBy(double rate) {
+		this.rate += rate;
+	}
+	
 	public int getRowIndex() {
 		return Integer.parseInt(this.id.split("-")[0]);
 	}

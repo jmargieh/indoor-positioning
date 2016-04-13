@@ -1,20 +1,22 @@
 package main.java.com.indoor.webservice;
 
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -26,7 +28,16 @@ import main.java.com.indoor.helpers.MultipartRequestHandler;
 public class FileUploadServlet extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-
+    
+	// location to store file uploaded
+    private static final String UPLOAD_DIRECTORY = "upload";
+ 
+    // upload settings
+    private static final int MEMORY_THRESHOLD   = 1024 * 1024 * 3;  // 3MB
+    private static final int MAX_FILE_SIZE      = 1024 * 1024 * 40; // 40MB
+    private static final int MAX_REQUEST_SIZE   = 1024 * 1024 * 50; // 50MB
+	
+	
 	// this will store uploaded files
 	private static List<FileMeta> files = new LinkedList<FileMeta>();
 	/***************************************************
@@ -36,28 +47,85 @@ public class FileUploadServlet extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 	        throws ServletException, IOException{
 	    
-		// 1. Upload File Using Java Servlet API
-		//files.addAll(MultipartRequestHandler.uploadByJavaServletAPI(request));			
-		
-		// 1. Upload File Using Apache FileUpload
-		files.addAll(MultipartRequestHandler.uploadByApacheFileUpload(request));
-		
-		// Remove some files
-		while(files.size() > 20)
-		{
-			files.remove(0);
-		}
-		
-		// 2. Set response type to json
-		response.setContentType("application/json");
-		
-		// 3. Convert List<FileMeta> into JSON format
-    	ObjectMapper mapper = new ObjectMapper();
-    	
-    	// 4. Send result to client
-    	mapper.writeValue(response.getOutputStream(), files);
-	
+		 // checks if the request actually contains upload file
+        if (!ServletFileUpload.isMultipartContent(request)) {
+            // if not, we stop here
+            PrintWriter writer = response.getWriter();
+            writer.println("Error: Form must has enctype=multipart/form-data.");
+            writer.flush();
+            return;
+        }
+ 
+        // configures upload settings
+        DiskFileItemFactory factory = new DiskFileItemFactory();
+        // sets memory threshold - beyond which files are stored in disk
+        factory.setSizeThreshold(MEMORY_THRESHOLD);
+        // sets temporary location to store files
+        factory.setRepository(new File(System.getProperty("java.io.tmpdir")));
+ 
+        ServletFileUpload upload = new ServletFileUpload(factory);
+         
+        // sets maximum size of upload file
+        upload.setFileSizeMax(MAX_FILE_SIZE);
+         
+        // sets maximum size of request (include file + form data)
+        upload.setSizeMax(MAX_REQUEST_SIZE);
+ 
+        // constructs the directory path to store upload file
+        // this path is relative to application's directory
+        String uploadPath = getServletContext().getRealPath("/")
+                + File.separator + UPLOAD_DIRECTORY;
+        // creates the directory if it does not exist
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdir();
+        }
+ 
+        try {
+            // parses the request's content to extract file data
+            @SuppressWarnings("unchecked")
+            List<FileItem> formItems = upload.parseRequest(request);
+ 
+            if (formItems != null && formItems.size() > 0) {
+                // iterates over form's fields
+                for (FileItem item : formItems) {
+                    // processes only fields that are not form fields
+                    if (!item.isFormField()) {
+                        String fileName = new File(item.getName()).getName();
+                        String filePath = uploadPath + File.separator + fileName;
+                        File storeFile = new File(filePath);
+ 
+                        // saves the file on disk
+                        item.write(storeFile);
+                        request.setAttribute("message",
+                            "Upload has been done successfully!");
+                    }
+                }
+            }
+            
+    		// 1. update files List<FileMeta> File Using Apache FileUpload
+    		files.addAll(MultipartRequestHandler.uploadByApacheFileUpload(formItems));
+    		
+    		// Remove some files if more than 20
+    		while(files.size() > 20)
+    		{
+    			files.remove(0);
+    		}
+    		// 2. Set response type to json
+    		response.setContentType("application/json");
+    		// 3. Convert List<FileMeta> into JSON format
+        	ObjectMapper mapper = new ObjectMapper();
+        	// 4. Send result to client
+        	mapper.writeValue(response.getOutputStream(), files);
+            
+            
+        } catch (Exception ex) {
+            request.setAttribute("message",
+                    "There was an error: " + ex.getMessage());
+        }
 	}
+	
+	
 	/***************************************************
 	 * URL: /upload?f=value
 	 * URL: /upload?getfiles=true
@@ -85,20 +153,6 @@ public class FileUploadServlet extends HttpServlet {
 		    	// 4. Send result to client
 		    	mapper.writeValue(response.getOutputStream(), files);
 		 }
-//		 else if (fileName != null){
-//			 
-//			 	FileMeta getFile = getFileContentByName(fileName);
-//			 	if( getFile != null) {
-//				 	response.setContentType("application/json; charset=UTF-8");
-//				 	PrintWriter out = response.getWriter();
-//			        	        
-//			        String s = getFile.getJsonContentFromInputStream();
-//			        
-//			        out.println(s);
-//			        out.close();	
-//			 	}
-//		   
-//		 }
 		 else {
 		 // 2. Get the file of index "f" from the list "files"
 		 FileMeta getFile = files.get(Integer.parseInt(value));

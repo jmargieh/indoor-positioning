@@ -53,50 +53,11 @@ public class FileMeta {
 	public void setTwitter(String twitter){
 		this.twitter = twitter;
 	}
-	/*
-	public String getJsonContentFromInputStream(){
-		return this.jsonContent;
-	}
-	*/
-	/*
-	// convert InputStream to String
-	public void setJsonContentFromInputStream() {
-
-		BufferedReader br = null;
-		StringBuilder sb = new StringBuilder();
-
-		String line;
-		try {
-
-			br = new BufferedReader(new InputStreamReader(this.getContent()));
-			while ((line = br.readLine()) != null) {
-				sb.append(line);
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-		this.jsonContent = sb.toString();
-
-	}
-	*/
 	
 	@Override
 	public String toString() {
 		return "FileMeta [fileName=" + fileName + ", fileSize=" + fileSize
 				+ ", fileType=" + fileType + "]";
-	}
-	
-	
-	
+	}	
 }
 
