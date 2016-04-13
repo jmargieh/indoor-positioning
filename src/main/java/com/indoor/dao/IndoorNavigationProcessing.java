@@ -197,7 +197,7 @@ public class IndoorNavigationProcessing {
 				}
 	        }	
 		}
-		
+
 		private void constructDevicesPathCoordinates() {
 			Iterator<Map.Entry<String, List<SuperSimpleFeaturePoint>>> iterator = this.deviceSuperSimpleFeaturePointMap.entrySet().iterator();
 			Map.Entry<String, List<SuperSimpleFeaturePoint>> entry = null; // <deviceId,
@@ -291,6 +291,10 @@ public class IndoorNavigationProcessing {
 			return direction;
 		}
 		
+		/**
+		 * 
+		 * @param pathCoordinates coordinates of certain device
+		 */
 		private void updateGridMapMatrixCustomLineStringAndGridSquareRates(List<int[]> pathCoordinates) {
 			// will need to loop over pathCoordinates and update GridMapMatrix Line String according
 			// to the Custom Line String Direction.
