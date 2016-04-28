@@ -179,23 +179,5 @@ public class FileUploadServlet extends HttpServlet {
 				e.printStackTrace();
 		 }
 		 }
-	}
-	/*
-	private FileMeta getFileContentByName(String filename){
-
-		ListIterator<FileMeta> listIterator = files.listIterator();
-		while (listIterator.hasNext()) {
-        	FileMeta file = listIterator.next();
-        	if(file.getFileName().compareTo(filename) == 0){
-        		return file;
-            	
-        	}
-        }
-		
-		FileMeta file = null;
-		return file;
-			}
-*/	
-
-	
+	}	
 }
