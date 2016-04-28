@@ -1,9 +1,12 @@
 package main.java.com.indoor.dao;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,8 +45,13 @@ import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.util.GeometricShapeFactory;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 public class IndoorNavigationProcessing {
 
+		private String result = "success"; // a status indicating the processing result
+	
 		//space coords
 		final double gridMinX1 = -417.0;
 		final double gridMaxX2 = 305.0;
@@ -54,16 +62,16 @@ public class IndoorNavigationProcessing {
 		final double distanationLineRateWeight = 0.4;
 		final double sourceLineRateWeight = 0.6; 
 		
-		final double gridSize = 2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
+		final double gridSize = 0.625; //1.25; //2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
 		
 		final int minimumNumberOfSamples = 3;
 		final double pointDistanceThreshold = 10; // should be 10 -- >
 		//points json file
-		private InputStream pointsInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/points.json");
+		private InputStream pointsInputStream;// = IndoorNavigationProcessing.class.getResourceAsStream("/json/points.json");
 		//obstacles json file - generally polygons
-		private InputStream obstaclesInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/obstacles.json");
+		private InputStream obstaclesInputStream;// = IndoorNavigationProcessing.class.getResourceAsStream("/json/obstacles.json");
 		// Device n+1 (the device we get after we did the pre-processing)
-		private InputStream deviceInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/device.json");
+		private InputStream deviceInputStream;// = IndoorNavigationProcessing.class.getResourceAsStream("/json/device.json");
 		// new device id
 		private String newDeviceId;
 		// new device points array
@@ -87,6 +95,10 @@ public class IndoorNavigationProcessing {
 		
 		public GridSquare[][] getGridMapMatrix() {
 			return this.gridMapMatrix;
+		}
+		
+		public String getResult() {
+			return this.result;
 		}
 		
 		// close Input Streams
@@ -128,12 +140,35 @@ public class IndoorNavigationProcessing {
 				closeInputStreams();
 
 			} catch (IOException e) {
+				this.result = e.getMessage();
 				System.err.print(e.getMessage());
 			}
 
 		}
 		
-		public IndoorNavigationProcessing() {
+		public IndoorNavigationProcessing(String space, String obstacles, String points) {
+			
+			try {
+				this.pointsInputStream = new URL("http://localhost:8080/indoor-positioning/upload/" + points + ".json").openStream();
+				//obstacles json file - generally polygons
+				this.obstaclesInputStream = new URL ("http://localhost:8080/indoor-positioning/upload/" + obstacles + ".json").openStream();
+				// Device n+1 (the device we get after we did the pre-processing)
+				this.deviceInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/device.json");
+			} catch (FileNotFoundException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (MalformedURLException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
 			initArrayLists();
 			/*
 			 * puts points in pointsArray
@@ -173,6 +208,15 @@ public class IndoorNavigationProcessing {
 			reLocatePointsInObstacle();
 			constructDevicesPathCoordinates(); // creates path coordinates of devices
 			createDevicesPath(); // constructs a LineString from coordinates
+			
+			try {
+				closeInputStreams();
+			} catch (IOException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
 		
 		/*
@@ -247,6 +291,7 @@ public class IndoorNavigationProcessing {
 						updateGridSquareRateBeforeDeviceRemove(entry.getKey());
 						iterator.remove(); // remove device that has no possible path between two points
 					}else {
+						this.result = e.getMessage();
 						e.printStackTrace();
 					}
 				}
@@ -303,6 +348,7 @@ public class IndoorNavigationProcessing {
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].increaseGridSquareRateBy(1.0);
 				direction = getDirectionFromTwoPoint(pathCoordinates.get(i) , pathCoordinates.get(i+1) );
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].getCustomLineStringByDirection(direction).increaseRateBy(1.0);
+				// maybe consider updating GridSquare Rate also ?!?!?!?!?
 			}
 		}
 		
@@ -330,6 +376,7 @@ public class IndoorNavigationProcessing {
 		    			}
 		            }
 	        	}catch (IllegalAccessException e) {
+	        		this.result = e.getMessage();
 					e.printStackTrace();
 				} catch (NullPointerException e) {
 					if (e.getMessage() != null && (e.getMessage().compareTo("No Possible Path") == 0) && entry != null) {
@@ -337,6 +384,7 @@ public class IndoorNavigationProcessing {
 						updateGridSquareRateBeforeDeviceRemove(entry.getKey());
 						iterator.remove(); // remove device that has no possible path between two points
 					}else {
+						this.result = e.getMessage();
 						e.printStackTrace();
 					}
 				}
@@ -960,11 +1008,51 @@ public class IndoorNavigationProcessing {
 					}
 				
 				}catch(IOException e){
+					this.result = e.getMessage();
 					System.err.println("error IO:" + e.getMessage() );
 				} catch (Exception e) {
+					this.result = e.getMessage();
 					System.err.println("error Exception:" + e.getMessage() );
 				}
 			
+		}
+
+		@SuppressWarnings("unchecked")
+		public JSONObject GenerateHeatMap() {
+			
+			JSONObject heatMapObject = new JSONObject();
+			JSONArray heatmapDataArray = new JSONArray();
+			Geometry gridSquare, point;
+			double max = 0;
+			for (int i = 0 ; i < this.gridMapMatrix.length ; i++) {
+				for(int j=0 ; j<this.gridMapMatrix[i].length; j++ ){
+					//JSONArray heatmapEntry = new JSONArray();
+					JSONObject heatMapEntryObject = new JSONObject();
+					gridSquare = (Geometry)gridMapMatrix[i][j].getSquare().getAttribute("element");
+					if (gridMapMatrix[i][j].getRate() != 0) {
+						
+	    				point = gridSquare.getCentroid();
+	    				
+	    				heatMapEntryObject.put("lng", point.getCoordinate().x);
+	    				heatMapEntryObject.put("lat", point.getCoordinate().y);
+	    				heatMapEntryObject.put("count", gridMapMatrix[i][j].getRate());
+	    				if (gridMapMatrix[i][j].getRate() > max) {
+	    					max = gridMapMatrix[i][j].getRate();
+	    				}
+	    				//heatmapEntry.add(point.getCoordinate().x);
+	    				//heatmapEntry.add(point.getCoordinate().y);
+	    				//heatmapEntry.add(gridMapMatrix[i][j].getRate() * 100);
+	    				heatmapDataArray.add(heatMapEntryObject);	
+					}
+					
+				}
+			}
+			
+			
+			heatMapObject.put("heatmapDataArray", heatmapDataArray);
+			heatMapObject.put("maximumHeat", max);
+			
+			return heatMapObject;
 		}
 		
 

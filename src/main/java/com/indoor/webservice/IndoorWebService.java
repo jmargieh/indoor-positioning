@@ -1,9 +1,13 @@
 package main.java.com.indoor.webservice;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.HashMap;
+import java.util.UUID;
+
+import org.json.simple.JSONObject;
 
 import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import main.java.com.indoor.dao.IndoorNavigationProcessing;
@@ -15,12 +19,30 @@ import org.springframework.stereotype.Component;
 @Component("IndoorWebService")
 public class IndoorWebService {
 
+	private HashMap<String, JSONObject> heatMaps = new HashMap<String, JSONObject>();
+	
 	@GET
-	@Path("/points")
-	public Response processGeoJsons() throws IOException {
+	@Path("/processGeoJsons")
+	@Produces("application/json")
+	public Response processGeoJsons(@QueryParam("space") String space, @QueryParam("obstacles") String obstacles, @QueryParam("points") String points) throws IOException {
+		
+		IndoorNavigationProcessing indoorNavPro = new IndoorNavigationProcessing(space,obstacles, points);
+		UUID uuid = UUID.randomUUID();
+		String result = "{\"result\":" + "\"" + indoorNavPro.getResult() + "\" ," + "\"uuid\":" + "\"" + uuid.toString() + "\"}";
+		
+		JSONObject heatmapObject = indoorNavPro.GenerateHeatMap();
+		heatMaps.put(uuid.toString(), heatmapObject);
+		
+		return Response.status(200).type(MediaType.APPLICATION_JSON_TYPE).entity(result).build();
 
-		IndoorNavigationProcessing indoorNavPro = new IndoorNavigationProcessing();
-		return Response.status(200).entity("   -----If reached here we succeed!").build();
+	}
+	
+	@GET
+	@Path("/generateHeatMap/{uuid}")
+	@Produces("application/json")
+	public Response generateHeatMap(@PathParam("uuid") String uuid) throws IOException {
+		JSONObject heatmapObject = this.heatMaps.get(uuid);
+		return Response.status(200).type(MediaType.APPLICATION_JSON_TYPE).entity(heatmapObject.toJSONString()).build();
 
 	}
 	
