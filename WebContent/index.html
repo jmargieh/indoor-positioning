@@ -3,13 +3,14 @@
 <head>
 <meta charset=utf-8 />
 <title>Home</title>
-<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<meta name='viewport'
+	content='initial-scale=1,maximum-scale=1,user-scalable=no' />
 <!-- 
 <script src='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.js'></script>
 <link href='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.css' rel='stylesheet' />
 --->
 
-    <link rel="stylesheet" href="css/leaflet.css" />
+<link rel="stylesheet" href="css/leaflet.css" />
 <!--[if lte IE 8]>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.6.4/leaflet.ie.css" />
 <![endif]-->
@@ -20,165 +21,186 @@
 <script src="js/leaflet.spin.js"></script>
 
 
-<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css" rel="stylesheet">
-<link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
-<script src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+	integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+	crossorigin="anonymous">
 
-<link href="css/style.css" rel="stylesheet">
+<!-- Optional theme -->
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css"
+	integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r"
+	crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script
+	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
+	integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+	crossorigin="anonymous"></script>
+
+
 
 <style>
-  body { margin:0; padding:0; }
-  #map { position:absolute; top:0; bottom:0; width:100%; }
+body {
+	margin: 0;
+	padding: 0;
+}
+
+#map {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 100%;
+}
 </style>
 </head>
-  <body>
- 
- <div id='background'></div>
-<div class='navbar navbar-fixed-top'>
-  <nav class='navbar-inner header'>
-    <div class='container'>
-      <div class='brand'>
-        INDOOR-POS <i class="fa fa-cloud" style="text-shadow: 1px 1px white, -1px -1px #666;"></i>
-      </div>
-      <ul class='nav pull-right'>
-        <li>
-          <a href="index.html" class='nav-link'>
-            HOME
-          </a>
-        </li>
-        <li>
-          <a href="fileupload.html" class='nav-link'>UPLOAD</a>
-        </li>
-        <li>
-          <a class='nav-link'>ANOTHER</a>
-        </li>
-        <li class='dropdown'>
-          <a class='dropdown-toggle nav-link' data-toggle='dropdown'>DROP
-            <ul class='dropdown-menu text-center'>
-              <li>
-                <a href="#">Example 1</a>
-              </li>
-              <li>
-                <a href="#">Example 2</a>
-              </li>
-              <li>
-                <a href="#">Example 3</a>
-              </li>
-            </ul>
-          </a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-</div>
-<div id='content'>
-  <div class='row-fluid'>
-    <div class='span12' style='background-color:rgba(0, 0, 0, .8);'>
-<div id='map'></div>
-    </div>
-  </div>
-</div>
+<body>
 
-<script>
+	<div id='background'></div>
+	<!-- Fixed navbar -->
+	<nav class="navbar navbar-default navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="#">Indoor-Positioning</a>
+			</div>
+			<div id="navbar" class="navbar-collapse collapse">
+				<ul class="nav navbar-nav">
+					<li class="active"><a href="index.html"><span
+							class="glyphicon glyphicon-home" aria-hidden="true"></span> Home</a></li>
+					<li><a href="fileupload.html"><span
+							class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span> Proccess</a></li>
+					<li><a href="#"><span class="glyphicon glyphicon-info-sign"
+							aria-hidden="true"></span> About</a></li>
+				</ul>
+				<ul class="nav navbar-nav navbar-right">
+					<li><a href="#" id="logout_btn">OneMoreThing</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+	<div id='content'>
+		<div class='row-fluid'>
+			<div class='span12' style='background-color: rgba(0, 0, 0, .8);'>
+				<div id='map'></div>
+			</div>
+		</div>
+	</div>
 
-var m= L.map('map',{
-    center: [24.847, -47.813],
-    zoom: 1.3,
-    zoomControl: false,
-    doubleClickZoom: false,
-    touchZoom: false
-	});
+	<script>
+		var m = L.map('map', {
+			center : [ 24.847, -47.813 ],
+			zoom : 1.3,
+			zoomControl : false,
+			doubleClickZoom : false,
+			touchZoom : false
+		});
 
-function popUp(f,l){
-    var out = [];
-    if (f.properties){
-        for(key in f.properties){
-        	if( (key === "title" || key === "description") && f.properties[key] !== "" ) {
-            out.push(key+": "+f.properties[key]);
-        	}
-        }
-        l.bindPopup(out.join("<br />"));
-    }
-}
-var jsonTest = new L.GeoJSON.AJAX(["/indoor-positioning/json/space.json","/indoor-positioning/json/obstacles.json"],{onEachFeature:popUp}).addTo(m);
-
-	function geojsonMarkerOptions(color) {
-		if(color !== "") {
-			return {
-			    radius: 4,
-			    fillColor: color,
-			    color: "#000",
-			    weight: 1,
-			    opacity: 1,
-			    fillOpacity: 0.8
+		function popUp(f, l) {
+			var out = [];
+			if (f.properties) {
+				for (key in f.properties) {
+					if ((key === "title" || key === "description")
+							&& f.properties[key] !== "") {
+						out.push(key + ": " + f.properties[key]);
+					}
+				}
+				l.bindPopup(out.join("<br />"));
 			}
 		}
-		// generate random color in case marker-color == ""
-		return {
-		    radius: 4,
-		    fillColor: getRandomColor(),
-		    color: "#000",
-		    weight: 1,
-		    opacity: 1,
-		    fillOpacity: 0.8
+		var jsonTest = new L.GeoJSON.AJAX([
+				"/indoor-positioning/json/space.json",
+				"/indoor-positioning/json/obstacles.json" ], {
+			onEachFeature : popUp
+		}).addTo(m);
+
+		function geojsonMarkerOptions(color) {
+			if (color !== "") {
+				return {
+					radius : 4,
+					fillColor : color,
+					color : "#000",
+					weight : 1,
+					opacity : 1,
+					fillOpacity : 0.8
+				}
+			}
+			// generate random color in case marker-color == ""
+			return {
+				radius : 4,
+				fillColor : getRandomColor(),
+				color : "#000",
+				weight : 1,
+				opacity : 1,
+				fillOpacity : 0.8
+			}
+		};
+
+		var testjson2 = new L.GeoJSON.AJAX(
+				[ "/indoor-positioning/json/points.json" ], {
+					pointToLayer : function(feature, latlng) {
+						var color = feature.properties["marker-color"];
+						return L.circleMarker(latlng,
+								geojsonMarkerOptions(color));
+					},
+					onEachFeature : popUp
+				}).addTo(m);
+
+		function getRandomColor() {
+			var letters = '0123456789ABCDEF'.split('');
+			var color = '#';
+			for (var i = 0; i < 6; i++) {
+				color += letters[Math.floor(Math.random() * 16)];
+			}
+			return color;
 		}
-	};
 
-	var testjson2 = new L.GeoJSON.AJAX(["/indoor-positioning/json/points.json"], {
-	    pointToLayer: function (feature, latlng) {
-	    	var color = feature.properties["marker-color"];
-	        return L.circleMarker(latlng, geojsonMarkerOptions(color));
-	    },
-	    onEachFeature:popUp
-	}).addTo(m);
+		/*
+		 L.mapbox.accessToken = 'pk.eyJ1Ijoiam1hcmdpZWgiLCJhIjoiY2loOTdjdW9tMDA0aHZubTMzZ3V6dGY5ZyJ9.o38NX6nKo20UvCqEyEWrSw';
 
-	function getRandomColor() {
-	    var letters = '0123456789ABCDEF'.split('');
-	    var color = '#';
-	    for (var i = 0; i < 6; i++ ) {
-	        color += letters[Math.floor(Math.random() * 16)];
-	    }
-	    return color;
-	}
-
-/*
-L.mapbox.accessToken = 'pk.eyJ1Ijoiam1hcmdpZWgiLCJhIjoiY2loOTdjdW9tMDA0aHZubTMzZ3V6dGY5ZyJ9.o38NX6nKo20UvCqEyEWrSw';
-
-var map = L.mapbox.map('map').setView([24.847, -47.813], 1.3);
+		 var map = L.mapbox.map('map').setView([24.847, -47.813], 1.3);
 
 
-var featureLayerSpace = L.mapbox.featureLayer()
-//.loadURL('/indoor-positioning/upload?filename=space.json')
-.loadURL('/indoor-positioning/json/space.json')
-.addTo(map);
+		 var featureLayerSpace = L.mapbox.featureLayer()
+		 //.loadURL('/indoor-positioning/upload?filename=space.json')
+		 .loadURL('/indoor-positioning/json/space.json')
+		 .addTo(map);
 
-var featureLayerObstacles = L.mapbox.featureLayer()
-//.loadURL('/indoor-positioning/upload?filename=obstacles.json')
-.loadURL('/indoor-positioning/json/obstacles.json')
-.addTo(map);
+		 var featureLayerObstacles = L.mapbox.featureLayer()
+		 //.loadURL('/indoor-positioning/upload?filename=obstacles.json')
+		 .loadURL('/indoor-positioning/json/obstacles.json')
+		 .addTo(map);
 
-var featureLayerPoints = L.mapbox.featureLayer()
-//.loadURL('/indoor-positioning/upload?filename=points.json')
-.loadURL('/indoor-positioning/json/points.json')
-.addTo(map);
+		 var featureLayerPoints = L.mapbox.featureLayer()
+		 //.loadURL('/indoor-positioning/upload?filename=points.json')
+		 .loadURL('/indoor-positioning/json/points.json')
+		 .addTo(map);
 
-var featureLayerPoints = L.mapbox.featureLayer()
-//.loadURL('/indoor-positioning/upload?filename=points.json')
-.loadURL('/indoor-positioning/json/device.json')
-.addTo(map);
+		 var featureLayerPoints = L.mapbox.featureLayer()
+		 //.loadURL('/indoor-positioning/upload?filename=points.json')
+		 .loadURL('/indoor-positioning/json/device.json')
+		 .addTo(map);
 
 
-//Disable drag and zoom handlers.
-map.dragging.disable();
-map.touchZoom.disable();
-map.doubleClickZoom.disable();
-map.scrollWheelZoom.disable();
-map.keyboard.disable();
+		 //Disable drag and zoom handlers.
+		 map.dragging.disable();
+		 map.touchZoom.disable();
+		 map.doubleClickZoom.disable();
+		 map.scrollWheelZoom.disable();
+		 map.keyboard.disable();
 
-// Disable tap handler, if present.
-if (map.tap) map.tap.disable();
-*/
-</script>
+		 // Disable tap handler, if present.
+		 if (map.tap) map.tap.disable();
+		 */
+	</script>
 
-  </body>
+</body>
 </html>
