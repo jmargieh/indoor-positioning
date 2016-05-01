@@ -102,6 +102,7 @@ $(function () {
         	$("#processResultmsgText").html("Files have been succesfully proccessed!");
         	$("#processResultmsg").fadeIn(1000);
         	$("#processResultmsg").delay(2000).fadeOut(1000);
+        	goToByScroll("step3");
         });
     	
     	promise.fail(function (data) {
@@ -118,9 +119,9 @@ $(function () {
     
     $("#generate-heatmap").click(function(){
     	var uuid =  (localStorage.getItem("heatmap-uuid") !== null) ? localStorage.getItem("heatmap-uuid"):window["heatmap-uuid"];
-    	//var promise = $.ajax({url: "../indoor-positioning/api/indoor/generateHeatMap/" + localStorage.getItem("heatmap-uuid"), dataType: "json"});
+    	var promise = $.ajax({url: "../indoor-positioning/api/indoor/generateHeatMap/" + localStorage.getItem("heatmap-uuid"), dataType: "json"});
     	
-    	var promise = $.ajax({url: "/indoor-positioning/json/heatmap.json" , dataType: "json"});
+    	//var promise = $.ajax({url: "/indoor-positioning/json/heatmap.0.625.json" , dataType: "json"});
     	
     	var promiseObstacles = $.ajax({url: "/indoor-positioning/json/obstacles.json" , dataType: "json"});
     	
