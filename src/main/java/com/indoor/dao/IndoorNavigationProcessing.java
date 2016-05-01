@@ -61,8 +61,9 @@ public class IndoorNavigationProcessing {
 		
 		final double distanationLineRateWeight = 0.4;
 		final double sourceLineRateWeight = 0.6; 
-		
-		final double gridSize = 0.625; //1.25; //2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
+		// thate minimum gridSize we could reach on our laptops is 0.625
+		// otherwise OutOfMemoryError Exception will be thrown - GC overhead limit exceeded
+		final double gridSize = 0.625; //0.625; //1.25; //2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
 		
 		final int minimumNumberOfSamples = 3;
 		final double pointDistanceThreshold = 10; // should be 10 -- >
@@ -108,7 +109,7 @@ public class IndoorNavigationProcessing {
 			deviceInputStream.close();
 		}
 
-		// initializating pointsArray and obstaclesArray
+		// initializating pointsArray and obstaclesArray from inputStreams
 		private void initArrayLists() {
 
 			SimpleFeature feature;
@@ -168,14 +169,11 @@ public class IndoorNavigationProcessing {
 				e.printStackTrace();
 			}
 			
-			
 			initArrayLists();
+
 			/*
-			 * puts points in pointsArray
-			 * puts obstacles in obstaclesArray
+			 * for each point checks if it's located on obstacle and add it to points in obstacles array.
 			 */
-			// loop over obstacles array and remove the point from the pointsArray if it's in obstacles
-			// and add it to pointsInObstaclesArray.
 			for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();) {
 				Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
 				for (Iterator<SimpleFeature> pIterator = this.pointsArray.iterator(); pIterator.hasNext();) {
@@ -195,9 +193,9 @@ public class IndoorNavigationProcessing {
 			// this will not remove points in obstacles because we need to relocate them.
 			this.pointsArray.addAll(newDevicePointsArray);
 			
+			//Processing..
 			
 			putPointsIntoDeviceHashMap();
-			//createDevicesPaths(); TODO : look at function dif
 			createGridMap();
 			deleteCustomLineStringCrossingObstacle();
 			updateRateAndPointsGridSquares();
@@ -348,7 +346,6 @@ public class IndoorNavigationProcessing {
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].increaseGridSquareRateBy(1.0);
 				direction = getDirectionFromTwoPoint(pathCoordinates.get(i) , pathCoordinates.get(i+1) );
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].getCustomLineStringByDirection(direction).increaseRateBy(1.0);
-				// maybe consider updating GridSquare Rate also ?!?!?!?!?
 			}
 		}
 		
@@ -448,181 +445,8 @@ public class IndoorNavigationProcessing {
 			return newIndexes;
 			
 		}
-		
-		private int[] calculateNextPointIndexes(char oneOrZero, String horizentalDirection, String verticalDirection, int[] currentIndexes) {
-			int[] nextIndexes = {-1,-1};
-			if (oneOrZero == '0') {
-				if(verticalDirection.compareTo("UP") == 0) {
-					if(gridMapMatrix[currentIndexes[0]+1][currentIndexes[1]].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[0]+=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				} else if(verticalDirection.compareTo("DOWN") == 0) {
-					if(gridMapMatrix[currentIndexes[0]-1][currentIndexes[1]].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[0]-=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				}
-			}
-			if (oneOrZero == '1') {
-				if(verticalDirection.compareTo("RIGHT") == 0) {
-					if(gridMapMatrix[currentIndexes[0]][currentIndexes[1]+1].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[1]+=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				} else if(verticalDirection.compareTo("LEFT") == 0) {
-					if(gridMapMatrix[currentIndexes[0]][currentIndexes[1]-1].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[1]-=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				}
-			}
-			return nextIndexes;
-		}
-		
-		
-		/*
-		 * returns the new indexes of GridSquare Matrix, where to relocate the point that was in obstacle
-		 */
-		private int[] heuristicCalculation1(SuperSimpleFeaturePoint ndsfp, int index, String deviceId, Geometry obstacle) throws IllegalAccessException {
-			int [] newIndexes = new int[2];
-			int [] originalPointIndexes =  {ndsfp.getRowIndex(),ndsfp.getColumnIndex()};
-			int [] previousPointIndexes = new int[2], nextPointIndexes = new int[2];
-			// checks if has a next point (point are sorted by timestamp)
-			if(index+1 < this.deviceSuperSimpleFeaturePointMap.get(deviceId).size()) {
-				nextPointIndexes[0] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index+1).getRowIndex(); //i
-				nextPointIndexes[1] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index+1).getColumnIndex(); //j
-			}
-			// checks if has a previous point (point are sorted by timestamp)
-			if(index-1 >= 0) {
-				previousPointIndexes[0] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index-1).getRowIndex(); //i
-				previousPointIndexes[1] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index-1).getColumnIndex(); //j
-			}
-			
-			String horizentalDirection, verticalDirection;
-			int distanceBetweenPreviousAndNextPoint = Math.abs(nextPointIndexes[0] - previousPointIndexes[0]) + Math.abs(nextPointIndexes[1] - previousPointIndexes[1]);
-			int directionRightOrLeft = Math.abs(nextPointIndexes[1] - previousPointIndexes[1]);
-			
-			if(nextPointIndexes[0] > previousPointIndexes[0]) {
-				verticalDirection = "UP";
-			} else {
-				verticalDirection = "DOWN";
-			}
-			
-			if(nextPointIndexes[1] > previousPointIndexes[1]) {
-				horizentalDirection = "RIGHT";
-			} else {
-				horizentalDirection = "LEFT";
-			}
-			
-			
-			List<String> shortestPossiblePaths = new ArrayList<String>();
-			List<Double> shortestPossiblePathsScore = new ArrayList<Double>();
-			
-			shortestPossiblePaths = findAllPosibblePaths(directionRightOrLeft, distanceBetweenPreviousAndNextPoint);
-			//loop over all path in order to choose the most popular and throw paths that crossing obstacles.
-			// this for loop as well will construct a new arrayList that contains the score for each path.
-			for (Iterator<String> oIterator = shortestPossiblePaths.iterator(); oIterator.hasNext();) {
-				int [] currentIndexes = {previousPointIndexes[0], previousPointIndexes[1]};
-				double score = gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-				String path = new String(oIterator.next());
-				for(int j = 0; j < path.length(); j++){
-					currentIndexes = calculateNextPointIndexes(path.charAt(j), horizentalDirection, verticalDirection, currentIndexes);
-					if(currentIndexes[0] == -1) {
-						oIterator.remove();
-						score = -1;
-						break;
-					}else {
-						score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				}
-				if(score != -1) {
-					shortestPossiblePathsScore.add(score);
-				}
-			}
-			// if There is no possible paths after filtering path crossing obstacles we will need another way to calculate the most popular path
-			// therefore we will not execute the if statement
-			if(shortestPossiblePaths.size() != 0) {
-				// if sizes are different something is wrong.
-				if(shortestPossiblePaths.size() != shortestPossiblePathsScore.size()) {
-					throw new IllegalAccessException("List should be same size");
-				}
-				// retrieve path with highest score and it's score
-				String highestScorePath = "";
-				double highestScore = 0;
-				for(int i = 0; i < shortestPossiblePaths.size(); i++) {
-					if(shortestPossiblePathsScore.get(i) > highestScore) {
-						highestScore = shortestPossiblePathsScore.get(i);
-						highestScorePath = shortestPossiblePaths.get(i);
-					}
-				}
-				// loop over the String of the retrieved path e.g 10011 and pick up the closest square to the obstacles point
-				int [] currentIndexes = {previousPointIndexes[0], previousPointIndexes[1]};
-				currentIndexes = calculateNextPointIndexes(highestScorePath.charAt(0), horizentalDirection, verticalDirection, currentIndexes);
-				Geometry p1 = (Geometry)gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getSquare().getAttribute("geometry");
-				Geometry p2 = (Geometry)gridMapMatrix[previousPointIndexes[0]][previousPointIndexes[1]].getSquare().getAttribute("geometry");
-				double minimumDistance = calculateDistance(p1,p2);
-				for(int i = 1; i < highestScorePath.length(); i++) {
-					currentIndexes = calculateNextPointIndexes(highestScorePath.charAt(i), horizentalDirection, verticalDirection, currentIndexes);
-					p1 = (Geometry)gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getSquare().getAttribute("geometry");
-					if(calculateDistance(p1,p2) < minimumDistance) {
-						minimumDistance = calculateDistance(p1,p2);
-						newIndexes[0] = currentIndexes[0];
-						newIndexes[1] = currentIndexes[1];
-					}
-				}
-			return newIndexes;
-			} else {
 				
-				//need to call A Star and relocate the point then
-				
-				// get obstacle coordinates and create a rectangle.
-				Coordinate [] obstacleCoordinates = obstacle.getCoordinates();
-				double maximumVerticalCoordinate = obstacleCoordinates[0].y, minimumVerticalCoordinate = obstacleCoordinates[0].y;
-				double maximumHorizontalCoordinate = obstacleCoordinates[0].x, minimumHorizontalCoordinate = obstacleCoordinates[0].x;
-				for(int i = 0 ; i < obstacleCoordinates.length; i++) {
-					if(obstacleCoordinates[i].x > maximumHorizontalCoordinate) {
-						maximumHorizontalCoordinate = obstacleCoordinates[i].x;
-					}
-					if(obstacleCoordinates[i].x < minimumHorizontalCoordinate) {
-						minimumHorizontalCoordinate = obstacleCoordinates[i].x;
-					}
-					if(obstacleCoordinates[i].y > maximumVerticalCoordinate) {
-						maximumVerticalCoordinate = obstacleCoordinates[i].y;
-					}
-					if(obstacleCoordinates[i].y < minimumVerticalCoordinate) {
-						minimumVerticalCoordinate = obstacleCoordinates[i].y;
-					}
-				}
-				
-				Geometry rectangleObstacle = createRectangle(minimumHorizontalCoordinate, minimumVerticalCoordinate, maximumHorizontalCoordinate, maximumVerticalCoordinate);
-			}
-					
-			return newIndexes;
-		}
-		/**
-		 * 
-		 */
+
 		private Geometry isPointInObstacle(SimpleFeature point) {
 			for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
 				Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
