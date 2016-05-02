@@ -6,8 +6,6 @@
 .settings
 .settings/
 .DS_Store
-.DS_Store/
-/.DS_Store/
 
 *.png
 
