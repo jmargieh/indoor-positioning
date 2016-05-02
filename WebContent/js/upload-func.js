@@ -119,7 +119,7 @@ $(function () {
     
     $("#generate-heatmap").click(function(){
     	var uuid =  (localStorage.getItem("heatmap-uuid") !== null) ? localStorage.getItem("heatmap-uuid"):window["heatmap-uuid"];
-    	var promise = $.ajax({url: "../indoor-positioning/api/indoor/generateHeatMap/" + localStorage.getItem("heatmap-uuid"), dataType: "json"});
+    	var promise = $.ajax({url: "../indoor-positioning/api/indoor/generateHeatMap/" + uuid, dataType: "json"});
     	
     	//var promise = $.ajax({url: "/indoor-positioning/json/heatmap.0.625.json" , dataType: "json"});
     	
