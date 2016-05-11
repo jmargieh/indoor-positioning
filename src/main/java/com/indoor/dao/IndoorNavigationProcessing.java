@@ -1,9 +1,12 @@
 package main.java.com.indoor.dao;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,8 +45,13 @@ import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.util.GeometricShapeFactory;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 public class IndoorNavigationProcessing {
 
+		private String result = "success"; // a status indicating the processing result
+	
 		//space coords
 		final double gridMinX1 = -417.0;
 		final double gridMaxX2 = 305.0;
@@ -53,17 +61,18 @@ public class IndoorNavigationProcessing {
 		
 		final double distanationLineRateWeight = 0.4;
 		final double sourceLineRateWeight = 0.6; 
-		
-		final double gridSize = 2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
+		// thate minimum gridSize we could reach on our laptops is 0.625
+		// otherwise OutOfMemoryError Exception will be thrown - GC overhead limit exceeded
+		final double gridSize = 0.625; //0.625; //1.25; //2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
 		
 		final int minimumNumberOfSamples = 3;
 		final double pointDistanceThreshold = 10; // should be 10 -- >
 		//points json file
-		private InputStream pointsInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/points.json");
+		private InputStream pointsInputStream;// = IndoorNavigationProcessing.class.getResourceAsStream("/json/points.json");
 		//obstacles json file - generally polygons
-		private InputStream obstaclesInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/obstacles.json");
+		private InputStream obstaclesInputStream;// = IndoorNavigationProcessing.class.getResourceAsStream("/json/obstacles.json");
 		// Device n+1 (the device we get after we did the pre-processing)
-		private InputStream deviceInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/device.json");
+		private InputStream deviceInputStream;// = IndoorNavigationProcessing.class.getResourceAsStream("/json/device.json");
 		// new device id
 		private String newDeviceId;
 		// new device points array
@@ -89,6 +98,10 @@ public class IndoorNavigationProcessing {
 			return this.gridMapMatrix;
 		}
 		
+		public String getResult() {
+			return this.result;
+		}
+		
 		// close Input Streams
 		private void closeInputStreams() throws IOException {
 			pointsInputStream.close();
@@ -96,7 +109,7 @@ public class IndoorNavigationProcessing {
 			deviceInputStream.close();
 		}
 
-		// initializating pointsArray and obstaclesArray
+		// initializating pointsArray and obstaclesArray from inputStreams
 		private void initArrayLists() {
 
 			SimpleFeature feature;
@@ -128,19 +141,39 @@ public class IndoorNavigationProcessing {
 				closeInputStreams();
 
 			} catch (IOException e) {
+				this.result = e.getMessage();
 				System.err.print(e.getMessage());
 			}
 
 		}
 		
-		public IndoorNavigationProcessing() {
+		public IndoorNavigationProcessing(String space, String obstacles, String points) {
+			
+			try {
+				this.pointsInputStream = new URL("http://localhost:8080/indoor-positioning/upload/" + points + ".json").openStream();
+				//obstacles json file - generally polygons
+				this.obstaclesInputStream = new URL ("http://localhost:8080/indoor-positioning/upload/" + obstacles + ".json").openStream();
+				// Device n+1 (the device we get after we did the pre-processing)
+				this.deviceInputStream = IndoorNavigationProcessing.class.getResourceAsStream("/json/device.json");
+			} catch (FileNotFoundException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (MalformedURLException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			initArrayLists();
+
 			/*
-			 * puts points in pointsArray
-			 * puts obstacles in obstaclesArray
+			 * for each point checks if it's located on obstacle and add it to points in obstacles array.
 			 */
-			// loop over obstacles array and remove the point from the pointsArray if it's in obstacles
-			// and add it to pointsInObstaclesArray.
 			for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();) {
 				Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
 				for (Iterator<SimpleFeature> pIterator = this.pointsArray.iterator(); pIterator.hasNext();) {
@@ -160,9 +193,9 @@ public class IndoorNavigationProcessing {
 			// this will not remove points in obstacles because we need to relocate them.
 			this.pointsArray.addAll(newDevicePointsArray);
 			
+			//Processing..
 			
 			putPointsIntoDeviceHashMap();
-			//createDevicesPaths(); TODO : look at function dif
 			createGridMap();
 			deleteCustomLineStringCrossingObstacle();
 			updateRateAndPointsGridSquares();
@@ -173,6 +206,15 @@ public class IndoorNavigationProcessing {
 			reLocatePointsInObstacle();
 			constructDevicesPathCoordinates(); // creates path coordinates of devices
 			createDevicesPath(); // constructs a LineString from coordinates
+			
+			try {
+				closeInputStreams();
+			} catch (IOException e) {
+				this.result = e.getMessage();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
 		
 		/*
@@ -247,6 +289,7 @@ public class IndoorNavigationProcessing {
 						updateGridSquareRateBeforeDeviceRemove(entry.getKey());
 						iterator.remove(); // remove device that has no possible path between two points
 					}else {
+						this.result = e.getMessage();
 						e.printStackTrace();
 					}
 				}
@@ -330,6 +373,7 @@ public class IndoorNavigationProcessing {
 		    			}
 		            }
 	        	}catch (IllegalAccessException e) {
+	        		this.result = e.getMessage();
 					e.printStackTrace();
 				} catch (NullPointerException e) {
 					if (e.getMessage() != null && (e.getMessage().compareTo("No Possible Path") == 0) && entry != null) {
@@ -337,6 +381,7 @@ public class IndoorNavigationProcessing {
 						updateGridSquareRateBeforeDeviceRemove(entry.getKey());
 						iterator.remove(); // remove device that has no possible path between two points
 					}else {
+						this.result = e.getMessage();
 						e.printStackTrace();
 					}
 				}
@@ -400,181 +445,8 @@ public class IndoorNavigationProcessing {
 			return newIndexes;
 			
 		}
-		
-		private int[] calculateNextPointIndexes(char oneOrZero, String horizentalDirection, String verticalDirection, int[] currentIndexes) {
-			int[] nextIndexes = {-1,-1};
-			if (oneOrZero == '0') {
-				if(verticalDirection.compareTo("UP") == 0) {
-					if(gridMapMatrix[currentIndexes[0]+1][currentIndexes[1]].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[0]+=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				} else if(verticalDirection.compareTo("DOWN") == 0) {
-					if(gridMapMatrix[currentIndexes[0]-1][currentIndexes[1]].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[0]-=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				}
-			}
-			if (oneOrZero == '1') {
-				if(verticalDirection.compareTo("RIGHT") == 0) {
-					if(gridMapMatrix[currentIndexes[0]][currentIndexes[1]+1].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[1]+=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				} else if(verticalDirection.compareTo("LEFT") == 0) {
-					if(gridMapMatrix[currentIndexes[0]][currentIndexes[1]-1].getIsInObstacle() == true) {
-						return nextIndexes;
-					}
-					else{
-						nextIndexes = currentIndexes;
-						nextIndexes[1]-=1;
-						return nextIndexes;
-						//score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				}
-			}
-			return nextIndexes;
-		}
-		
-		
-		/*
-		 * returns the new indexes of GridSquare Matrix, where to relocate the point that was in obstacle
-		 */
-		private int[] heuristicCalculation1(SuperSimpleFeaturePoint ndsfp, int index, String deviceId, Geometry obstacle) throws IllegalAccessException {
-			int [] newIndexes = new int[2];
-			int [] originalPointIndexes =  {ndsfp.getRowIndex(),ndsfp.getColumnIndex()};
-			int [] previousPointIndexes = new int[2], nextPointIndexes = new int[2];
-			// checks if has a next point (point are sorted by timestamp)
-			if(index+1 < this.deviceSuperSimpleFeaturePointMap.get(deviceId).size()) {
-				nextPointIndexes[0] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index+1).getRowIndex(); //i
-				nextPointIndexes[1] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index+1).getColumnIndex(); //j
-			}
-			// checks if has a previous point (point are sorted by timestamp)
-			if(index-1 >= 0) {
-				previousPointIndexes[0] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index-1).getRowIndex(); //i
-				previousPointIndexes[1] = this.deviceSuperSimpleFeaturePointMap.get(deviceId).get(index-1).getColumnIndex(); //j
-			}
-			
-			String horizentalDirection, verticalDirection;
-			int distanceBetweenPreviousAndNextPoint = Math.abs(nextPointIndexes[0] - previousPointIndexes[0]) + Math.abs(nextPointIndexes[1] - previousPointIndexes[1]);
-			int directionRightOrLeft = Math.abs(nextPointIndexes[1] - previousPointIndexes[1]);
-			
-			if(nextPointIndexes[0] > previousPointIndexes[0]) {
-				verticalDirection = "UP";
-			} else {
-				verticalDirection = "DOWN";
-			}
-			
-			if(nextPointIndexes[1] > previousPointIndexes[1]) {
-				horizentalDirection = "RIGHT";
-			} else {
-				horizentalDirection = "LEFT";
-			}
-			
-			
-			List<String> shortestPossiblePaths = new ArrayList<String>();
-			List<Double> shortestPossiblePathsScore = new ArrayList<Double>();
-			
-			shortestPossiblePaths = findAllPosibblePaths(directionRightOrLeft, distanceBetweenPreviousAndNextPoint);
-			//loop over all path in order to choose the most popular and throw paths that crossing obstacles.
-			// this for loop as well will construct a new arrayList that contains the score for each path.
-			for (Iterator<String> oIterator = shortestPossiblePaths.iterator(); oIterator.hasNext();) {
-				int [] currentIndexes = {previousPointIndexes[0], previousPointIndexes[1]};
-				double score = gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-				String path = new String(oIterator.next());
-				for(int j = 0; j < path.length(); j++){
-					currentIndexes = calculateNextPointIndexes(path.charAt(j), horizentalDirection, verticalDirection, currentIndexes);
-					if(currentIndexes[0] == -1) {
-						oIterator.remove();
-						score = -1;
-						break;
-					}else {
-						score += gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getRate();
-					}
-				}
-				if(score != -1) {
-					shortestPossiblePathsScore.add(score);
-				}
-			}
-			// if There is no possible paths after filtering path crossing obstacles we will need another way to calculate the most popular path
-			// therefore we will not execute the if statement
-			if(shortestPossiblePaths.size() != 0) {
-				// if sizes are different something is wrong.
-				if(shortestPossiblePaths.size() != shortestPossiblePathsScore.size()) {
-					throw new IllegalAccessException("List should be same size");
-				}
-				// retrieve path with highest score and it's score
-				String highestScorePath = "";
-				double highestScore = 0;
-				for(int i = 0; i < shortestPossiblePaths.size(); i++) {
-					if(shortestPossiblePathsScore.get(i) > highestScore) {
-						highestScore = shortestPossiblePathsScore.get(i);
-						highestScorePath = shortestPossiblePaths.get(i);
-					}
-				}
-				// loop over the String of the retrieved path e.g 10011 and pick up the closest square to the obstacles point
-				int [] currentIndexes = {previousPointIndexes[0], previousPointIndexes[1]};
-				currentIndexes = calculateNextPointIndexes(highestScorePath.charAt(0), horizentalDirection, verticalDirection, currentIndexes);
-				Geometry p1 = (Geometry)gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getSquare().getAttribute("geometry");
-				Geometry p2 = (Geometry)gridMapMatrix[previousPointIndexes[0]][previousPointIndexes[1]].getSquare().getAttribute("geometry");
-				double minimumDistance = calculateDistance(p1,p2);
-				for(int i = 1; i < highestScorePath.length(); i++) {
-					currentIndexes = calculateNextPointIndexes(highestScorePath.charAt(i), horizentalDirection, verticalDirection, currentIndexes);
-					p1 = (Geometry)gridMapMatrix[currentIndexes[0]][currentIndexes[1]].getSquare().getAttribute("geometry");
-					if(calculateDistance(p1,p2) < minimumDistance) {
-						minimumDistance = calculateDistance(p1,p2);
-						newIndexes[0] = currentIndexes[0];
-						newIndexes[1] = currentIndexes[1];
-					}
-				}
-			return newIndexes;
-			} else {
 				
-				//need to call A Star and relocate the point then
-				
-				// get obstacle coordinates and create a rectangle.
-				Coordinate [] obstacleCoordinates = obstacle.getCoordinates();
-				double maximumVerticalCoordinate = obstacleCoordinates[0].y, minimumVerticalCoordinate = obstacleCoordinates[0].y;
-				double maximumHorizontalCoordinate = obstacleCoordinates[0].x, minimumHorizontalCoordinate = obstacleCoordinates[0].x;
-				for(int i = 0 ; i < obstacleCoordinates.length; i++) {
-					if(obstacleCoordinates[i].x > maximumHorizontalCoordinate) {
-						maximumHorizontalCoordinate = obstacleCoordinates[i].x;
-					}
-					if(obstacleCoordinates[i].x < minimumHorizontalCoordinate) {
-						minimumHorizontalCoordinate = obstacleCoordinates[i].x;
-					}
-					if(obstacleCoordinates[i].y > maximumVerticalCoordinate) {
-						maximumVerticalCoordinate = obstacleCoordinates[i].y;
-					}
-					if(obstacleCoordinates[i].y < minimumVerticalCoordinate) {
-						minimumVerticalCoordinate = obstacleCoordinates[i].y;
-					}
-				}
-				
-				Geometry rectangleObstacle = createRectangle(minimumHorizontalCoordinate, minimumVerticalCoordinate, maximumHorizontalCoordinate, maximumVerticalCoordinate);
-			}
-					
-			return newIndexes;
-		}
-		/**
-		 * 
-		 */
+
 		private Geometry isPointInObstacle(SimpleFeature point) {
 			for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
 				Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
@@ -960,11 +832,51 @@ public class IndoorNavigationProcessing {
 					}
 				
 				}catch(IOException e){
+					this.result = e.getMessage();
 					System.err.println("error IO:" + e.getMessage() );
 				} catch (Exception e) {
+					this.result = e.getMessage();
 					System.err.println("error Exception:" + e.getMessage() );
 				}
 			
+		}
+
+		@SuppressWarnings("unchecked")
+		public JSONObject GenerateHeatMap() {
+			
+			JSONObject heatMapObject = new JSONObject();
+			JSONArray heatmapDataArray = new JSONArray();
+			Geometry gridSquare, point;
+			double max = 0;
+			for (int i = 0 ; i < this.gridMapMatrix.length ; i++) {
+				for(int j=0 ; j<this.gridMapMatrix[i].length; j++ ){
+					//JSONArray heatmapEntry = new JSONArray();
+					JSONObject heatMapEntryObject = new JSONObject();
+					gridSquare = (Geometry)gridMapMatrix[i][j].getSquare().getAttribute("element");
+					if (gridMapMatrix[i][j].getRate() != 0) {
+						
+	    				point = gridSquare.getCentroid();
+	    				
+	    				heatMapEntryObject.put("lng", point.getCoordinate().x);
+	    				heatMapEntryObject.put("lat", point.getCoordinate().y);
+	    				heatMapEntryObject.put("count", gridMapMatrix[i][j].getRate());
+	    				if (gridMapMatrix[i][j].getRate() > max) {
+	    					max = gridMapMatrix[i][j].getRate();
+	    				}
+	    				//heatmapEntry.add(point.getCoordinate().x);
+	    				//heatmapEntry.add(point.getCoordinate().y);
+	    				//heatmapEntry.add(gridMapMatrix[i][j].getRate() * 100);
+	    				heatmapDataArray.add(heatMapEntryObject);	
+					}
+					
+				}
+			}
+			
+			
+			heatMapObject.put("heatmapDataArray", heatmapDataArray);
+			heatMapObject.put("maximumHeat", max);
+			
+			return heatMapObject;
 		}
 		
 
