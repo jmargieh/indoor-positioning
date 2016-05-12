@@ -63,7 +63,7 @@ public class IndoorNavigationProcessing {
 		final double sourceLineRateWeight = 0.6; 
 		// thate minimum gridSize we could reach on our laptops is 0.625
 		// otherwise OutOfMemoryError Exception will be thrown - GC overhead limit exceeded
-		final double gridSize = 0.625; //0.625; //1.25; //2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
+		final double gridSize = 0.625 ; //0.625; //1.25; //2.5; //5.0; // 0.75; //10.0 // 2.5 --> the smaller gridSize the better 
 		
 		final int minimumNumberOfSamples = 3;
 		final double pointDistanceThreshold = 10; // should be 10 -- >
@@ -295,7 +295,7 @@ public class IndoorNavigationProcessing {
 				}
 			}
 		}
-		private CustomLineString.Direction getDirectionFromTwoPoint(int[] point1 , int[] point2){
+		private CustomLineString.Direction getDirectionFromTwoPoints(int[] point1 , int[] point2){
 			int si = point1[0] , sj = point2[0], ei = point1[1] , ej = point2[1];
 			CustomLineString.Direction direction = null;
 			if(si == sj){ // point on the same row
@@ -344,7 +344,7 @@ public class IndoorNavigationProcessing {
 			CustomLineString.Direction direction = null;
 			for(int i=0; i<pathCoordinates.size()-1; i++){
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].increaseGridSquareRateBy(1.0);
-				direction = getDirectionFromTwoPoint(pathCoordinates.get(i) , pathCoordinates.get(i+1) );
+				direction = getDirectionFromTwoPoints(pathCoordinates.get(i) , pathCoordinates.get(i+1) );
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].getCustomLineStringByDirection(direction).increaseRateBy(1.0);
 			}
 		}
@@ -549,27 +549,7 @@ public class IndoorNavigationProcessing {
 		private double calculateDistance(Geometry p1, Geometry p2) {
 			return p1.distance(p2);
 		}
-		
-		// gets something like (Geometry)pIterator.next().getAttribute("geometry"))
-		private Geometry createCircle(Geometry p1, double radius) {
-			
-			double xCoordinate = p1.getCoordinate().x;
-			double yCoordinate = p1.getCoordinate().y;
-			GeometricShapeFactory shapeFactory = new GeometricShapeFactory();
-			shapeFactory.setNumPoints(32);
-			shapeFactory.setCentre(new Coordinate(xCoordinate, yCoordinate));
-			shapeFactory.setSize(radius * 2);
-			return shapeFactory.createCircle();
-		}
-		
-		// gets something like (Geometry)pIterator.next().getAttribute("geometry"))
-		private Geometry createRectangle(double x1, double y1, double x2, double y2) {
-
-			GeometryFactory geometryFactory = new GeometryFactory();
-			GeometryBuilder gb = new GeometryBuilder(geometryFactory);
-			return gb.box(x1, y1, x2, y2);
-		}
-		
+				
 		// construct a lineString from given set of points and save it into a devicePathMap
 		// key : deviceID    value: LineString (costructed from the device's points)
 		// TODO : will need to modify this function to give path from  the start and end of each lineString. 
@@ -841,6 +821,10 @@ public class IndoorNavigationProcessing {
 			
 		}
 
+		/**
+		 * 
+		 * @return
+		 */
 		@SuppressWarnings("unchecked")
 		public JSONObject GenerateHeatMap() {
 			
@@ -872,11 +856,61 @@ public class IndoorNavigationProcessing {
 				}
 			}
 			
-			
 			heatMapObject.put("heatmapDataArray", heatmapDataArray);
 			heatMapObject.put("maximumHeat", max);
 			
 			return heatMapObject;
+		}
+	
+		/**
+		 * 
+		 * @return
+		 */
+		@SuppressWarnings("unchecked")
+		public JSONObject GenerateDevicesPaths() {
+			JSONArray devicesPathsArray = new JSONArray();
+			JSONObject devicesPathsObject = new JSONObject();
+			Iterator<Map.Entry<String, List<SuperSimpleFeaturePoint>>> iterator = this.deviceSuperSimpleFeaturePointMap.entrySet().iterator();
+			Map.Entry<String, List<SuperSimpleFeaturePoint>> entry = null; // <deviceId,
+			SuperSimpleFeaturePoint superSimpleFeature;
+			int[] newIndexes;
+			CustomLineString.Direction direction = null;
+			double rate, maximumRate = 0;
+	        while(iterator.hasNext()){
+	        		entry = iterator.next();
+	        		JSONArray LineStringDataArray = new JSONArray(); // [...]
+		            for (int i=0; i<entry.getValue().size()-1; i++ ) {
+		            	
+		            	int [] sourcePointIndex =  { entry.getValue().get(i).getRowIndex(), entry.getValue().get(i).getColumnIndex() };
+		            	int [] destinationPointIndex =  { entry.getValue().get(i+1).getRowIndex(), entry.getValue().get(i+1).getColumnIndex() };
+		            	direction = getDirectionFromTwoPoints(sourcePointIndex, destinationPointIndex );
+		            	rate = gridMapMatrix[entry.getValue().get(i).getRowIndex()][entry.getValue().get(i).getColumnIndex()].getCustomLineStringByDirection(direction).getRate();
+		            	if (rate > maximumRate) {
+		            		maximumRate = rate;
+		            	}
+		            	JSONArray subLineStartCoords = new JSONArray(); // [x,y]
+		            	JSONArray subLineEndCoords = new JSONArray(); // [x,y]
+		            	JSONArray subLineCoords = new JSONArray(); // [ [x,y], [x,y] ]
+		            	JSONObject subLine = new JSONObject(); // { ... }
+		            	
+		            	// constructing coords array
+		            	subLineStartCoords.add( ((Point)((Geometry)gridMapMatrix[sourcePointIndex[0]][sourcePointIndex[1]].getSquare().getAttribute("element")).getCentroid()).getCoordinate().y );
+		            	subLineStartCoords.add(((Point)((Geometry)gridMapMatrix[sourcePointIndex[0]][sourcePointIndex[1]].getSquare().getAttribute("element")).getCentroid()).getCoordinate().x);
+		            	subLineEndCoords.add(((Point)((Geometry)gridMapMatrix[destinationPointIndex[0]][destinationPointIndex[1]].getSquare().getAttribute("element")).getCentroid()).getCoordinate().y);
+		            	subLineEndCoords.add(((Point)((Geometry)gridMapMatrix[destinationPointIndex[0]][destinationPointIndex[1]].getSquare().getAttribute("element")).getCentroid()).getCoordinate().x);
+		            	subLineCoords.add(subLineStartCoords);
+		            	subLineCoords.add(subLineEndCoords);
+		            	
+		            	// constructing subLine object
+		            	subLine.put("coords", subLineCoords);
+		            	subLine.put("rate", rate);
+		            	LineStringDataArray.add(subLine);		            	
+		            }
+		            devicesPathsArray.add(LineStringDataArray);
+	        	}
+	        devicesPathsObject.put("DevicesPathData", devicesPathsArray);
+	        devicesPathsObject.put("MaximumRate", maximumRate);
+			return devicesPathsObject;
 		}
 		
 

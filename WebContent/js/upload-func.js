@@ -118,13 +118,11 @@ $(function () {
     });
     
     $("#generate-heatmap").click(function(){
+    	
     	var uuid =  (localStorage.getItem("heatmap-uuid") !== null) ? localStorage.getItem("heatmap-uuid"):window["heatmap-uuid"];
-    	var promise = $.ajax({url: "../indoor-positioning/api/indoor/generateHeatMap/" + uuid, dataType: "json"});
-    	
-    	//var promise = $.ajax({url: "/indoor-positioning/json/heatmap.0.625.json" , dataType: "json"});
-    	
+    	//var promise = $.ajax({url: "../indoor-positioning/api/indoor/generateHeatMap/" + uuid, dataType: "json"});
+    	var promise = $.ajax({url: "/indoor-positioning/json/heatmap.0.625.json" , dataType: "json"});
     	var promiseObstacles = $.ajax({url: "/indoor-positioning/json/obstacles.json" , dataType: "json"});
-    	
     	
     	promise.done(function (data) {
 
@@ -141,18 +139,11 @@ $(function () {
     		        var cfg = {
     		          // radius should be small ONLY if scaleRadius is true (or small radius is intended)
     		          "radius": 2,//0.625,
-    		          "maxOpacity": 0.9, 
-    		          // scales the radius based on map zoom
+    		          "maxOpacity": 0.75, 
     		          "scaleRadius": true, 
-    		          // if set to false the heatmap uses the global maximum for colorization
-    		          // if activated: uses the data maximum within the current map boundaries 
-    		          //   (there will always be a red spot with useLocalExtremas true)
     		          "useLocalExtrema": true,
-    		          // which field name in your data represents the latitude - default "lat"
     		          latField: 'lat',
-    		          // which field name in your data represents the longitude - default "lng"
     		          lngField: 'lng',
-    		          // which field name in your data represents the data value - default "value"
     		          valueField: 'count'
     		        };
     		        var heatmapLayer = new HeatmapOverlay(cfg);
@@ -168,10 +159,46 @@ $(function () {
     		    	promiseObstacles.done(function (data) {
     		    		L.geoJson(data).addTo(map);
     		    	});
+        });
+    	
+    });
+   
+    
+    $("#generate-pathmap").click(function(){
+    	
+    	var uuid =  (localStorage.getItem("heatmap-uuid") !== null) ? localStorage.getItem("heatmap-uuid"):window["heatmap-uuid"];
+    	//var promise = $.ajax({url: "../indoor-positioning/api/indoor/generateDevicesPaths/" + uuid, dataType: "json"});
+    	var promise = $.ajax({url: "/indoor-positioning/json/pathmap.0.625.json" , dataType: "json"});
+    	var promiseObstacles = $.ajax({url: "/indoor-positioning/json/obstacles.json" , dataType: "json"});
+    	
+    	promise.done(function (data) {
+
+    		var map = new L.Map('pathMap', {
+    	        center: [ -18.847, -10.813 ],
+    	        zoom: 1.3,
+    	        layers: [
+    	            new L.TileLayer('', {
+    	                attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+    	                maxZoom: 18
+    	            })
+    	        ]
+    	    });
+    		
+    		var plArray = [];
+    		for(var i=0; i<data.DevicesPathData.length; i++) {
+    			for(var j=0; j<data.DevicesPathData[i].length; j++) {
+    				plArray.push(L.polyline(data.DevicesPathData[i][j].coords,{weight: data.DevicesPathData[i][j].rate , opacity:1}).addTo(map));
+    			}
+    	    }
+    		
+    		promiseObstacles.done(function (data) {
+	    		L.geoJson(data).addTo(map);
+	    	});
     		
         });
     	
     });
+   
     
     
 });
