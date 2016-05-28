@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Component("IndoorWebService")
 public class IndoorWebService {
 
-	private HashMap<String, JSONObject> heatMaps = new HashMap<String, JSONObject>();
+	private HashMap<String, IndoorNavigationProcessing> indoorPosMaps = new HashMap<String, IndoorNavigationProcessing>();
 	
 	/**
 	 * 
@@ -39,12 +39,8 @@ public class IndoorWebService {
 		UUID uuid = UUID.randomUUID();
 		String result = "{\"result\":" + "\"" + indoorNavPro.getResult() + "\" ," + "\"uuid\":" + "\"" + uuid.toString() + "\"}";
 		
-		// create & preserve processing uuid and generate a heatmap
-		JSONObject heatmapObject = indoorNavPro.GenerateHeatMap();
-		heatMaps.put(uuid.toString(), heatmapObject);
-		
+		indoorPosMaps.put(uuid.toString(), indoorNavPro);
 		return Response.status(200).type(MediaType.APPLICATION_JSON_TYPE).entity(result).build();
-
 	}
 	
 	/**
@@ -57,13 +53,23 @@ public class IndoorWebService {
 	@Path("/generateHeatMap/{uuid}")
 	@Produces("application/json")
 	public Response generateHeatMap(@PathParam("uuid") String uuid) throws IOException {
-		JSONObject heatmapObject = this.heatMaps.get(uuid);
+		
+		// create & preserve processing uuid and generate a heatmap
+		JSONObject heatmapObject = this.indoorPosMaps.get(uuid).GenerateHeatMap();
 		return Response.status(200).type(MediaType.APPLICATION_JSON_TYPE).entity(heatmapObject.toJSONString()).build();
-
 	}
 	
 	@GET
-	@Path("/generatePoints/{pointsNumber}/{deviceNumber}")
+	@Path("/generateDevicesPaths/{uuid}")
+	@Produces("application/json")
+	public Response generateDevicesPaths(@PathParam("uuid") String uuid) throws IOException {
+		// create & preserve processing uuid and generate a heatmap
+		JSONObject devicesPathsObject = this.indoorPosMaps.get(uuid).GenerateDevicesPaths();
+		return Response.status(200).type(MediaType.APPLICATION_JSON_TYPE).entity(devicesPathsObject.toJSONString()).build();
+	}
+	
+	@GET
+	@Path("/generateRandomPoints/{pointsNumber}/{deviceNumber}")
 	public Response generateRandomGeoJSONPoints(@PathParam("pointsNumber") int pointsNumber, @PathParam("deviceNumber") int deviceNumber) throws IOException {
 		String res = RandomGeoJsonPointGenerator.generatePathOfPoints(pointsNumber,deviceNumber);
 
