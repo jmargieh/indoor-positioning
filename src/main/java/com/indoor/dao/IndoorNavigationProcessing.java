@@ -48,6 +48,7 @@ import com.vividsolutions.jts.util.GeometricShapeFactory;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+
 public class IndoorNavigationProcessing {
 
 		private String result = "success"; // a status indicating the processing result
@@ -90,10 +91,14 @@ public class IndoorNavigationProcessing {
 		// HashMap with key:deviceid & LineString: the device path
 		private HashMap<String, LineString> devicePathMap = new HashMap<String, LineString>();
 		// GridMap Matrix Reference : http://docs.geotools.org/latest/userguide/extension/grid.html
+		// it is a grid that holds information about the avenue, see class GridSquare
 		private GridSquare gridMapMatrix[][];
 		
 		private AStar aStar;
 		
+		/**
+		 * @return gridMapMatrix, which is the grid map that holds information 
+		 */
 		public GridSquare[][] getGridMapMatrix() {
 			return this.gridMapMatrix;
 		}
@@ -109,7 +114,9 @@ public class IndoorNavigationProcessing {
 			deviceInputStream.close();
 		}
 
-		// initializating pointsArray and obstaclesArray from inputStreams
+		/**
+		 * initializing pointsArray and obstaclesArray from inputStreams
+		 */
 		private void initArrayLists() {
 
 			SimpleFeature feature;
@@ -147,6 +154,12 @@ public class IndoorNavigationProcessing {
 
 		}
 		
+		/**
+		 * @param space
+		 * @param obstacles
+		 * @param points
+		 * takes those String parameters and initializes the input streams 
+		 */
 		public IndoorNavigationProcessing(String space, String obstacles, String points) {
 			
 			try {
@@ -220,7 +233,13 @@ public class IndoorNavigationProcessing {
 		/*
 		 * need to loop over deviceMap and covert it into DeviceSuperSimpleFeaturePointMap
 		 * (The same map with different class) -> this is done in order to use same heuristic function
-		 * and retreive indexes i,j in future automaticaly
+		 * and retrieve indexes i,j in future automatically
+		 */
+		
+		/**
+		 * initializing the deviceSuperSimpleFeaturePointMap from deviceMap
+		 * it copies the information from deviceMap and adds extra information which is the row index and the column 
+		 * index of each point. 
 		 */
 		private void initDeviceSuperSimpleFeaturePointMap() {
 			Iterator<Map.Entry<String, List<SimpleFeature>>> iterator = this.deviceMap.entrySet().iterator();
@@ -240,7 +259,12 @@ public class IndoorNavigationProcessing {
 	        }	
 		}
 
+		/**
+		 * Takes the sorted list of points (by time stamp) of each device and creates the full path 
+		 * further explain in the booklet
+		 */
 		private void constructDevicesPathCoordinates() {
+			// iterate over devices
 			Iterator<Map.Entry<String, List<SuperSimpleFeaturePoint>>> iterator = this.deviceSuperSimpleFeaturePointMap.entrySet().iterator();
 			Map.Entry<String, List<SuperSimpleFeaturePoint>> entry = null; // <deviceId,
 			SuperSimpleFeaturePoint superSimpleFeaturePoint1, superSimpleFeaturePoint2;
@@ -248,10 +272,12 @@ public class IndoorNavigationProcessing {
 			while(iterator.hasNext()){
 				try {
 					entry = iterator.next();
+					// iterate over points of each device
 					for (int i=0; i<entry.getValue().size()-1; i++ ) {
 						superSimpleFeaturePoint1 = entry.getValue().get(i);
 						superSimpleFeaturePoint2 = entry.getValue().get(i+1);
 						this.aStar.setGridMapMatrix(this.gridMapMatrix); // need update gridMapMatrix of aStar since we're removing devices in case no possible path exist
+						// create full path between two points 
 						pathCoordinates.addAll(aStar.findShortestPath(superSimpleFeaturePoint1.getRowIndex(), superSimpleFeaturePoint1.getColumnIndex(), superSimpleFeaturePoint2.getRowIndex(), superSimpleFeaturePoint2.getColumnIndex()));
 						if (i+1 == entry.getValue().size()-1) {
 							int [] lastPointIndexes =  {superSimpleFeaturePoint2.getRowIndex(),superSimpleFeaturePoint2.getColumnIndex()};
@@ -295,6 +321,11 @@ public class IndoorNavigationProcessing {
 				}
 			}
 		}
+		/**
+		 * @param point1
+		 * @param point2
+		 * @return direction, Direction of the lineString, meaning the direction the user went between these two points
+		 */
 		private CustomLineString.Direction getDirectionFromTwoPoints(int[] point1 , int[] point2){
 			int si = point1[0] , sj = point2[0], ei = point1[1] , ej = point2[1];
 			CustomLineString.Direction direction = null;
@@ -335,12 +366,13 @@ public class IndoorNavigationProcessing {
 		}
 		
 		/**
-		 * 
-		 * @param pathCoordinates coordinates of certain device
+		 * @param pathCoordinates, coordinates of certain device
+		 * before calling this function, we have had added points some specific device in order to create it's path
+		 * so we need to update the rate of each square that we have added a point to, and the rate of the linestring used 
 		 */
 		private void updateGridMapMatrixCustomLineStringAndGridSquareRates(List<int[]> pathCoordinates) {
-			// will need to loop over pathCoordinates and update GridMapMatrix Line String according
-			// to the Custom Line String Direction.
+			// loop over pathCoordinates and update GridMapMatrix Line String according
+			// to the Custom Line String Direction. Also update rate of square
 			CustomLineString.Direction direction = null;
 			for(int i=0; i<pathCoordinates.size()-1; i++){
 				this.gridMapMatrix[pathCoordinates.get(i)[0]][pathCoordinates.get(i)[1]].increaseGridSquareRateBy(1.0);
@@ -349,6 +381,9 @@ public class IndoorNavigationProcessing {
 			}
 		}
 		
+		/**
+		 * relocate points that are in obstacle according to the heuristic function
+		 */
 		private void reLocatePointsInObstacle() {
 			Iterator<Map.Entry<String, List<SuperSimpleFeaturePoint>>> iterator = this.deviceSuperSimpleFeaturePointMap.entrySet().iterator();
 			Map.Entry<String, List<SuperSimpleFeaturePoint>> entry = null; // <deviceId,
@@ -388,6 +423,10 @@ public class IndoorNavigationProcessing {
 	        }
 		}
 	
+		/**
+		 * @param deviceId
+		 * 
+		 */
 		private void updateGridSquareRateBeforeDeviceRemove(String deviceId) {
 			List<SuperSimpleFeaturePoint> ssfpArrayList = this.deviceSuperSimpleFeaturePointMap.get(deviceId);
 			SuperSimpleFeaturePoint superSimpleFeaturePoint = null;
