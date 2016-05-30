@@ -2,6 +2,10 @@ package main.java.com.indoor.helpers;
 import com.vividsolutions.jts.geom.Geometry;
 
 
+/**
+ * we needed more properties for lineString therefore we created this class
+ * Properties are: direction , rate 
+ */
 public class CustomLineString {
 	
 	private Geometry line;

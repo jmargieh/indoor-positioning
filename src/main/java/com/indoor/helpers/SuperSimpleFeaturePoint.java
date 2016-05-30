@@ -2,6 +2,10 @@ package main.java.com.indoor.helpers;
 
 import org.opengis.feature.simple.SimpleFeature;
 
+/**
+ * Class that we needed to save for each simpleFeature it's row index and column index
+ *
+ */
 public class SuperSimpleFeaturePoint {
 
 	private SimpleFeature feature;

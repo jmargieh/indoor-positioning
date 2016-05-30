@@ -425,7 +425,7 @@ public class IndoorNavigationProcessing {
 	
 		/**
 		 * @param deviceId
-		 * 
+		 * after removing a certain device we need to update the square rates that included this device's points 
 		 */
 		private void updateGridSquareRateBeforeDeviceRemove(String deviceId) {
 			List<SuperSimpleFeaturePoint> ssfpArrayList = this.deviceSuperSimpleFeaturePointMap.get(deviceId);
@@ -440,6 +440,17 @@ public class IndoorNavigationProcessing {
 			
 		}
 		
+		/**
+		 * @param ndsfp
+		 * @param index
+		 * @param deviceId
+		 * @return newIndexes
+		 * @throws IllegalAccessException
+		 * @throws NullPointerException
+		 * 
+		 * finds the shortest path between the previous and next points and returns a point on that path that has
+		 * the smallest distance from the point spotted in obstacle before
+		 */
 		private int[] heuristicCalculation(SuperSimpleFeaturePoint ndsfp, int index, String deviceId) throws IllegalAccessException,NullPointerException {
 			int [] newIndexes = new int[2];
 			int [] originalPointIndexes =  {ndsfp.getRowIndex(),ndsfp.getColumnIndex()};
@@ -486,6 +497,11 @@ public class IndoorNavigationProcessing {
 		}
 				
 
+		/**
+		 * @param point
+		 * @return obstacle or null
+		 * checks if point in obstacle, if yes then it returns that obstacle otherwise returns null
+		 */
 		private Geometry isPointInObstacle(SimpleFeature point) {
 			for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
 				Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
@@ -497,8 +513,10 @@ public class IndoorNavigationProcessing {
 		}
 		
 		
-		/*
-		 * get indexes of the GridSquare that cointains the simplefeaturePoint
+		/**
+		 * @param simplefeaturePoint
+		 * @return indexes 
+		 * get indexes of the GridSquare that contains the simplefeaturePoint
 		 */
 		private int[] getPointIndexesInGridSquare(SimpleFeature simplefeaturePoint) {
 			int [] indexes = new int[2];
@@ -518,6 +536,9 @@ public class IndoorNavigationProcessing {
 		
 		/*
 		 * // this.deviceMap = HashMap with key:deviceid & SimpleFeature points List sorted by timestamp.
+		 */
+		/**
+		 * list points into deviceMap according to their deviceID
 		 */
 		private void putPointsIntoDeviceHashMap() {
 			
@@ -541,6 +562,9 @@ public class IndoorNavigationProcessing {
 			//removeDevicesWithPointsDistanceAboveThreshold(); // need to be umcommented later
 		}
 		
+		/**
+		 * remove device if distance between 2 consecutive points is bigger than defined threshold
+		 */
 		private void removeDevicesWithPointsDistanceAboveThreshold() {
 			Iterator<Map.Entry<String, List<SimpleFeature>>> iterator = this.deviceMap.entrySet().iterator();
 			List<SimpleFeature> devicePointsList;
@@ -555,14 +579,13 @@ public class IndoorNavigationProcessing {
 						break;
 					}
 				}
-				// remove device if distance between 2 consecutive points is bigger than defined threshold
 				if(removeDevice) {
 					iterator.remove();
 				}
 			}
 		}
 
-		/*
+		/**
 		 * loop over deviceMap, and remove devices with less than minimum number of samplings minimumNumberOfSamples.
 		 */
 		private void removeDevicesWithLessThanMinimumSamples() {
@@ -576,6 +599,9 @@ public class IndoorNavigationProcessing {
 		}
 		
 		
+		/**
+		 * sort point of each device in deviceMap  by time stamp
+		 */
 		private void sortDeviceHashMapListByTimeStamp() {
 			
 			for (List<SimpleFeature> list : this.deviceMap.values()) {
@@ -585,13 +611,21 @@ public class IndoorNavigationProcessing {
 		
 		
 		// gets something like (Geometry)pIterator.next().getAttribute("geometry")) 
+		/**
+		 * @param p1
+		 * @param p2
+		 * @return distance
+		 * distance between two points
+		 */
 		private double calculateDistance(Geometry p1, Geometry p2) {
 			return p1.distance(p2);
 		}
 				
-		// construct a lineString from given set of points and save it into a devicePathMap
-		// key : deviceID    value: LineString (costructed from the device's points)
 		// TODO : will need to modify this function to give path from  the start and end of each lineString. 
+		/**
+		 * construct a lineString from given set of points and save it into a devicePathMap
+		 * key : deviceID    value: LineString (constructed from the device's points)
+		 */
 		private void createDevicesPath() {
 			
 			int counter = 0;
@@ -611,7 +645,7 @@ public class IndoorNavigationProcessing {
 			}
 		}
 		
-		/*
+		/**
 		 * update the GridSquare rate
 		 * rate : number of points in the GridSquare.
 		 */
@@ -634,8 +668,8 @@ public class IndoorNavigationProcessing {
 		}
 		
 		
-		/*
-		 * update the rate of the CustomLineString, according to it's direction.
+		/**
+		 * update the rate of the CustomLineString, according to it's direction in gridMapMatrix.
 		 */
 		private void updateRateCustomLineInGrid(){
 			double sourceLineRate;
@@ -675,7 +709,7 @@ public class IndoorNavigationProcessing {
 			}
 		}
 		
-		/*
+		/**
 		 * loop over the customLineStringArray of each GridSquare in gridMapMatrix, and remove lineString crossing obstacles.
 		 */
 		private void deleteCustomLineStringCrossingObstacle() {
@@ -698,7 +732,11 @@ public class IndoorNavigationProcessing {
 			}
 		}
 		
-		// checks if a path/Stringline is crossing an obstacle.
+		/**
+		 * @param line
+		 * @return true or false
+		 * if path/lineString is crossing obstacle return true otherwise false
+		 */
 		private boolean isPathCrossingObstacle(Geometry line) {
 			for (Iterator<SimpleFeature> oIterator = this.obstaclesArray.iterator(); oIterator.hasNext();){
 				Geometry obstacle = (Geometry)oIterator.next().getAttribute("geometry");
@@ -709,6 +747,12 @@ public class IndoorNavigationProcessing {
 			return false;
 		}
 		
+		/**
+		 * @param p1
+		 * @param p2
+		 * @return line
+		 * creates a lineString from a set of coordinates of two given points
+		 */
 		private Geometry createLineString(Point p1, Point p2){
 			GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
 			Coordinate[] coords = new Coordinate[] {new Coordinate(p1.getCoordinate().x, p1.getCoordinate().y), new Coordinate(p2.getCoordinate().x, p2.getCoordinate().y)};
@@ -735,8 +779,10 @@ public class IndoorNavigationProcessing {
 		}
 
 		
-		// creates a Grid Map : Reference : http://docs.geotools.org/latest/userguide/extension/grid.html
-		// each feature is a polygon of size 10x10 (gridSize x gridSize)
+		/**
+		 * creates a Grid Map : Reference : http://docs.geotools.org/latest/userguide/extension/grid.html
+		 * each feature is a polygon of size 10x10 (gridSize x gridSize)
+		 */
 		private void createGridMap() {
 			
 			try{
