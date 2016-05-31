@@ -998,40 +998,4 @@ public class IndoorNavigationProcessing {
 			return devicesPathsObject;
 		}
 		
-
-		/*
-		 *  x is number of 1's - right or left
-		 *  n is the length of the path.
-		 *  return a binary string which defines the paths from source point to the destination point
-		 */
-		private List<String> findAllPosibblePaths(int x, int n) {
-
-			List<String> possiblePaths = new ArrayList<>();
-		    Set<BigInteger> result = new LinkedHashSet<>();
-		    for (int j = x; j > 0; j--) {
-		        Set<BigInteger> a = new LinkedHashSet<>();
-
-		        for (int i = 0; i < n - j + 1; i++) {
-		            if (j == x) {
-		                a.add(BigInteger.ZERO.flipBit(i));
-		            } else {
-		                for (BigInteger num : result) {
-		                    if (num != null && !num.testBit(i) && (i >= (n - j) || num.getLowestSetBit() >= i-1))
-		                        a.add(num.setBit(i));
-		                }
-		            }
-		        }
-		        result = a;
-		    }
-
-		    String zeros = new String(new char[n]).replace("\0", "0");
-		    for (BigInteger i : result) {
-		        String binary = i.toString(2);
-		        //System.out.println(zeros.substring(0, n - binary.length()) + binary);
-		        possiblePaths.add(zeros.substring(0, n - binary.length()) + binary);
-		    }
-		    
-		    return possiblePaths;
-
-		}
 }
