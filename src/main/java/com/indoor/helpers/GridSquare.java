@@ -106,7 +106,7 @@ public class GridSquare {
 	/**
 	 * @param direction
 	 * @param rate
-	 * sets the rate of a linestring according to it's direction
+	 * sets the rate of a lineString according to it's direction
 	 */
 	public void setCustomLineStringByDirection(Direction direction, double rate) {
 		for (int i = 0; i < this.customLineStringArray.size(); i++) {
