@@ -441,7 +441,7 @@ public class IndoorNavigationProcessing {
 		}
 		
 		/**
-		 * @param ndsfp
+		 * @param ndsfp, point to be relocated
 		 * @param index
 		 * @param deviceId
 		 * @return newIndexes
