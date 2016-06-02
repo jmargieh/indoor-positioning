@@ -892,7 +892,6 @@ public class IndoorNavigationProcessing {
 							}
 							
 							
-							//GridSquare[i][j] = feature; // to be modified add new(..,..,..,..);
 						}
 					}
 				
