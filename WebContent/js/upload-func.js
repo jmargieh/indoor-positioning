@@ -138,10 +138,10 @@ $(function () {
     		        );
     		        var cfg = {
     		          // radius should be small ONLY if scaleRadius is true (or small radius is intended)
-    		          "radius": 2,//0.625,
-    		          "maxOpacity": 0.75, 
+    		          "radius": 3,//0.625,
+    		          "maxOpacity": 0.55, 
     		          "scaleRadius": true, 
-    		          "useLocalExtrema": true,
+    		          "useLocalExtrema": false,
     		          latField: 'lat',
     		          lngField: 'lng',
     		          valueField: 'count'
