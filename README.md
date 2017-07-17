@@ -1,2 +1,2 @@
 # indoor-positioning
-indoor-positioning project IBM -
+indoor-positioning project
